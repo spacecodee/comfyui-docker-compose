@@ -78,6 +78,31 @@ cp .env.example .env
 
 Default UI: `http://localhost:8188`
 
+## GPU Build and Run Sequence
+
+Use this exact sequence on your GPU host, especially after dependency or Dockerfile changes:
+
+1. Rebuild the GPU image from scratch.
+This ensures new Python dependencies and image changes are applied.
+
+```bash
+./scripts/run-comfyui.sh gpu build --no-cache
+```
+
+2. Start ComfyUI with the GPU stack.
+This launches the service using the GPU compose override.
+
+```bash
+./scripts/run-comfyui.sh gpu up
+```
+
+3. Follow container logs.
+This is useful to confirm startup and detect runtime issues quickly.
+
+```bash
+./scripts/run-comfyui.sh gpu logs
+```
+
 ## Manager and Previews
 
 ### ComfyUI-Manager
