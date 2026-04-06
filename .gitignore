@@ -1,0 +1,26 @@
+.env
+.env.*
+!.env.example
+*.log
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+
+# Runtime data from bind mounts.
+data/models/**
+!data/models/**/
+!data/models/**/.gitkeep
+data/custom_nodes/**
+!data/custom_nodes/.gitkeep
+data/input/**
+!data/input/.gitkeep
+data/output/**
+!data/output/.gitkeep
+data/user/**
+!data/user/.gitkeep
+data/temp/**
+!data/temp/.gitkeep
+
+# Workflows are intentionally always local and never committed.
+data/workflows/

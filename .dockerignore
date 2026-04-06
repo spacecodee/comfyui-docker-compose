@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.env.*
+*.log
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+data/
+models/
+output/
+input/
+custom_nodes/
+user/
+temp/

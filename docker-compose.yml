@@ -1,0 +1,49 @@
+services:
+  comfyui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        COMFYUI_REF: ${COMFYUI_REF:-v0.9.2}
+        TORCH_CHANNEL: ${TORCH_CHANNEL:-stable}
+    image: ${IMAGE_NAME:-comfyui-local}:${IMAGE_TAG:-latest}
+    container_name: comfyui
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      COMFYUI_HOST: ${COMFYUI_HOST:-0.0.0.0}
+      COMFYUI_PORT: ${COMFYUI_PORT:-8188}
+      COMFYUI_EXTRA_ARGS: ${COMFYUI_EXTRA_ARGS:-}
+      COMFY_PRECHECK_CUDA: ${COMFY_PRECHECK_CUDA:-false}
+      COMFY_WORKFLOWS_DIR: /opt/comfyui/workflows
+      COMFY_WORKFLOWS_EDIT_DIR: /opt/comfyui/workflows/editing
+    ports:
+      - "${COMFYUI_PORT:-8188}:8188"
+    volumes:
+      - type: bind
+        source: ${COMFY_MODELS_BIND:-./data/models}
+        target: /opt/comfyui/models
+      - type: bind
+        source: ${COMFY_CUSTOM_NODES_BIND:-./data/custom_nodes}
+        target: /opt/comfyui/custom_nodes
+      - type: bind
+        source: ${COMFY_INPUT_BIND:-./data/input}
+        target: /opt/comfyui/input
+      - type: bind
+        source: ${COMFY_OUTPUT_BIND:-./data/output}
+        target: /opt/comfyui/output
+      - type: bind
+        source: ${COMFY_USER_BIND:-./data/user}
+        target: /opt/comfyui/user
+      - type: bind
+        source: ${COMFY_TEMP_BIND:-./data/temp}
+        target: /opt/comfyui/temp
+      - type: bind
+        source: ${COMFY_WORKFLOWS_BIND:-./data/workflows}
+        target: /opt/comfyui/workflows
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${COMFYUI_PORT:-8188}/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
