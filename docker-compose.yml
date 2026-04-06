@@ -10,6 +10,12 @@ services:
     container_name: comfyui
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
+      COMFY_RUNTIME_USER: ${COMFY_RUNTIME_USER:-comfyui}
+      USER: ${COMFY_RUNTIME_USER:-comfyui}
+      LOGNAME: ${COMFY_RUNTIME_USER:-comfyui}
+      HOME: /opt/comfyui/user
+      XDG_CACHE_HOME: /opt/comfyui/user/.cache
+      TORCHINDUCTOR_CACHE_DIR: /opt/comfyui/user/.cache/torchinductor
       COMFYUI_HOST: ${COMFYUI_HOST:-0.0.0.0}
       COMFYUI_PORT: ${COMFYUI_PORT:-8188}
       COMFYUI_EXTRA_ARGS: ${COMFYUI_EXTRA_ARGS:-}

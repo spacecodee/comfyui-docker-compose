@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+runtime_user="${COMFY_RUNTIME_USER:-comfyui}"
+export USER="${USER:-$runtime_user}"
+export LOGNAME="${LOGNAME:-$runtime_user}"
+export HOME="${HOME:-/opt/comfyui/user}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-${HOME}/.cache}"
+export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-${XDG_CACHE_HOME}/torchinductor}"
+
+mkdir -p "$HOME" "$XDG_CACHE_HOME" "$TORCHINDUCTOR_CACHE_DIR"
+
 /usr/local/bin/preflight.sh
 
 cd /opt/comfyui

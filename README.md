@@ -317,6 +317,16 @@ docker compose build --no-cache comfyui
 - Verify the host exposes the GPU to the container runtime (`nvidia-smi` on host and inside the container when applicable).
 - Rebuild if you changed channel or versions.
 
+### "No username set in the environment" or "getpwuid(): uid not found"
+
+- This happens when the container runs as a numeric UID that does not exist in `/etc/passwd`.
+- The stack now sets `USER`, `LOGNAME`, `HOME`, `XDG_CACHE_HOME`, and `TORCHINDUCTOR_CACHE_DIR` explicitly.
+- Make sure your `.env` includes `COMFY_RUNTIME_USER` (default: `comfyui`) and restart the stack.
+
+```bash
+./scripts/run-comfyui.sh gpu restart
+```
+
 ### Permission Issues in Mounted Folders
 
 - Adjust `LOCAL_UID` and `LOCAL_GID` in `.env` to match the real host user values.

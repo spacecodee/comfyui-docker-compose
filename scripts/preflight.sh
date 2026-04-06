@@ -9,6 +9,9 @@ USER_DIR="${COMFY_USER_DIR:-/opt/comfyui/user}"
 TEMP_DIR="${COMFY_TEMP_DIR:-/opt/comfyui/temp}"
 WORKFLOWS_DIR="${COMFY_WORKFLOWS_DIR:-/opt/comfyui/workflows}"
 WORKFLOWS_EDIT_DIR="${COMFY_WORKFLOWS_EDIT_DIR:-${WORKFLOWS_DIR}/editing}"
+HOME_DIR="${HOME:-/opt/comfyui/user}"
+XDG_CACHE_HOME_DIR="${XDG_CACHE_HOME:-${HOME_DIR}/.cache}"
+TORCHINDUCTOR_CACHE_DIR_VALUE="${TORCHINDUCTOR_CACHE_DIR:-${XDG_CACHE_HOME_DIR}/torchinductor}"
 PRECHECK_CUDA="${COMFY_PRECHECK_CUDA:-false}"
 
 required_dirs=(
@@ -20,6 +23,9 @@ required_dirs=(
   "$TEMP_DIR"
   "$WORKFLOWS_DIR"
   "$WORKFLOWS_EDIT_DIR"
+  "$HOME_DIR"
+  "$XDG_CACHE_HOME_DIR"
+  "$TORCHINDUCTOR_CACHE_DIR_VALUE"
 )
 
 echo "[preflight] python: $(python --version 2>&1)"
