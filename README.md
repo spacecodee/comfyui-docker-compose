@@ -19,6 +19,7 @@ Run ComfyUI with Docker Compose using a reproducible setup for remote servers (f
 - `scripts/workflow-save.sh`: saves workflows into a dedicated local folder.
 - `scripts/workflow-move-to-edit.sh`: moves workflows into an edit folder ignored by git.
 - `scripts/update-comfyui-ref.sh`: automatically updates `COMFYUI_REF`.
+- `scripts/model-download.sh`: downloads models from Hugging Face or CivitAI into ComfyUI model folders.
 - `scripts/verify-local.sh` and `scripts/verify-gpu.sh`: smoke tests.
 
 ## Requirements
@@ -53,6 +54,9 @@ cp .env.example .env
 - `COMFY_*_BIND` to choose persistence locations on the host disk.
 - `TORCH_CHANNEL` (`stable` or `nightly`).
 - `COMFYUI_REF` (ComfyUI tag or commit).
+- Optional tokens for private/gated models:
+  - `HF_TOKEN`
+  - `CIVITAI_TOKEN`
 
 3. Run ComfyUI:
 
@@ -128,17 +132,34 @@ When you change channel, rebuild the image:
 ComfyUI runtime directories are created automatically under `data/`.
 
 - Folders with `.gitkeep` (tracked):
+  - `data/models/audio_encoders`
   - `data/models/checkpoints`
+  - `data/models/clip`
+  - `data/models/clip_vision`
+  - `data/models/configs`
+  - `data/models/controlnet`
+  - `data/models/diffusers`
   - `data/models/vae`
   - `data/models/vae_approx`
+  - `data/models/embeddings`
+  - `data/models/gligen`
+  - `data/models/hypernetworks`
+  - `data/models/latent_upscale_models`
   - `data/models/loras`
+  - `data/models/model_patches`
+  - `data/models/photomaker`
+  - `data/models/style_models`
   - `data/models/text_encoders`
+  - `data/models/unet`
+  - `data/models/upscale_models`
   - `data/models/diffusion_models`
   - `data/custom_nodes`
   - `data/input`
   - `data/output`
   - `data/user`
   - `data/temp`
+
+The model subfolders above are intentionally aligned with the current upstream tree in ComfyUI `models/`.
 
 Any new file inside those folders is ignored by git (only `.gitkeep` is tracked).
 
@@ -181,6 +202,44 @@ Pin a specific reference:
 ```bash
 ./scripts/update-comfyui-ref.sh --ref v0.9.2 --file .env
 ```
+
+## Download Models (Hugging Face and CivitAI)
+
+Download from Hugging Face (public model):
+
+```bash
+./scripts/model-download.sh --provider huggingface --model-dir checkpoints \
+  --repo Comfy-Org/stable-diffusion-v1-5-archive \
+  --file v1-5-pruned-emaonly-fp16.safetensors
+```
+
+Download from Hugging Face with token (private/gated):
+
+```bash
+./scripts/model-download.sh --provider huggingface --model-dir checkpoints \
+  --repo my-org/private-model-repo \
+  --file model.safetensors \
+  --token "$HF_TOKEN"
+```
+
+Download from CivitAI using model version ID (public):
+
+```bash
+./scripts/model-download.sh --provider civitai --model-dir loras \
+  --model-id 12345 \
+  --output my-lora.safetensors
+```
+
+Download from CivitAI with token:
+
+```bash
+./scripts/model-download.sh --provider civitai --model-dir checkpoints \
+  --url "https://civitai.com/api/download/models/12345" \
+  --token "$CIVITAI_TOKEN" \
+  --output model.safetensors
+```
+
+The script supports both token and tokenless downloads. Public files can be downloaded without a token.
 
 ## Manual Compose Operation
 

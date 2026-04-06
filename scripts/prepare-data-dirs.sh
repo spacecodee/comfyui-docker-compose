@@ -4,6 +4,8 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+MODEL_DIRS_FILE="$ROOT_DIR/scripts/comfy-model-dirs.txt"
+
 load_env_vars() {
   local env_file=""
   if [[ -f .env ]]; then
@@ -47,19 +49,25 @@ user_bind="$(resolve_bind "${COMFY_USER_BIND:-./data/user}")"
 temp_bind="$(resolve_bind "${COMFY_TEMP_BIND:-./data/temp}")"
 workflows_bind="$(resolve_bind "${COMFY_WORKFLOWS_BIND:-./data/workflows}")"
 
+if [[ ! -f "$MODEL_DIRS_FILE" ]]; then
+  echo "[prepare-data-dirs] ERROR: missing $MODEL_DIRS_FILE" >&2
+  exit 1
+fi
+
 tracked_dirs=(
-  "$models_bind/checkpoints"
-  "$models_bind/vae"
-  "$models_bind/vae_approx"
-  "$models_bind/loras"
-  "$models_bind/text_encoders"
-  "$models_bind/diffusion_models"
   "$custom_nodes_bind"
   "$input_bind"
   "$output_bind"
   "$user_bind"
   "$temp_bind"
 )
+
+while IFS= read -r model_subdir; do
+  if [[ -z "$model_subdir" ]]; then
+    continue
+  fi
+  tracked_dirs+=("$models_bind/$model_subdir")
+done < "$MODEL_DIRS_FILE"
 
 for dir in "${tracked_dirs[@]}"; do
   mkdir -p "$dir"
