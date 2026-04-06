@@ -1,37 +1,37 @@
 # comfyui-docker-compose
 
-Proyecto para ejecutar ComfyUI en Docker Compose con enfoque reproducible para servidores remotos (por ejemplo Lightning AI), evitando dependencias del entorno conda del host.
+Run ComfyUI with Docker Compose using a reproducible setup for remote servers (for example Lightning AI), without relying on the host conda environment.
 
-## Objetivo
+## Goal
 
-- Ejecutar ComfyUI en contenedor.
-- Usar configuración estable por defecto para NVIDIA en CUDA 13 (`cu130`).
-- Permitir canal opcional nightly (`cu132`) para pruebas de rendimiento.
-- Persistir modelos, nodos personalizados y salidas con bind mounts del host.
+- Run ComfyUI in a container.
+- Use a stable default for NVIDIA on CUDA 13 (`cu130`).
+- Allow an optional nightly channel (`cu132`) for performance testing.
+- Persist models, custom nodes, and outputs using host bind mounts.
 
-## Incluye
+## Includes
 
-- `Dockerfile`: imagen reproducible con ComfyUI fijado por referencia (`COMFYUI_REF`).
-- `docker-compose.yml`: servicio base (usable en entorno local sin GPU).
-- `docker-compose.gpu.yml`: override para ejecución con GPU NVIDIA.
-- `scripts/run-comfyui.sh`: script de ejecución (`local` o `gpu`).
-- `scripts/prepare-data-dirs.sh`: crea toda la estructura de carpetas de datos.
-- `scripts/workflow-save.sh`: guarda workflows en carpeta local dedicada.
-- `scripts/workflow-move-to-edit.sh`: mueve workflows a carpeta de edición ignorada por git.
-- `scripts/update-comfyui-ref.sh`: actualiza automáticamente `COMFYUI_REF`.
-- `scripts/verify-local.sh` y `scripts/verify-gpu.sh`: smoke tests.
+- `Dockerfile`: reproducible image with ComfyUI pinned by reference (`COMFYUI_REF`).
+- `docker-compose.yml`: base service (usable locally without GPU).
+- `docker-compose.gpu.yml`: override for NVIDIA GPU execution.
+- `scripts/run-comfyui.sh`: run script (`local` or `gpu`).
+- `scripts/prepare-data-dirs.sh`: creates the full data directory structure.
+- `scripts/workflow-save.sh`: saves workflows into a dedicated local folder.
+- `scripts/workflow-move-to-edit.sh`: moves workflows into an edit folder ignored by git.
+- `scripts/update-comfyui-ref.sh`: automatically updates `COMFYUI_REF`.
+- `scripts/verify-local.sh` and `scripts/verify-gpu.sh`: smoke tests.
 
-## Requisitos
+## Requirements
 
-- Docker Engine 24+ (recomendado)
+- Docker Engine 24+ (recommended)
 - Docker Compose plugin v2+
 
-Para ejecución con GPU NVIDIA:
+For NVIDIA GPU execution:
 
-- Driver NVIDIA compatible instalado en el host.
-- NVIDIA Container Toolkit instalado y operativo.
+- Compatible NVIDIA driver installed on the host.
+- NVIDIA Container Toolkit installed and working.
 
-Comprobaciones útiles:
+Useful checks:
 
 ```bash
 docker --version
@@ -39,28 +39,28 @@ docker compose version
 nvidia-smi
 ```
 
-## Inicio rápido
+## Quick Start
 
-1. Copia variables de entorno:
+1. Copy the environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Ajusta en `.env` al menos:
+2. In `.env`, adjust at least:
 
-- `LOCAL_UID` y `LOCAL_GID` (usa `id -u` y `id -g` para evitar permisos root en los archivos generados).
-- `COMFY_*_BIND` para ubicar persistencia en el disco del servidor.
-- `TORCH_CHANNEL` (`stable` o `nightly`).
-- `COMFYUI_REF` (tag o commit de ComfyUI).
+- `LOCAL_UID` and `LOCAL_GID` (use `id -u` and `id -g` to avoid root-owned generated files).
+- `COMFY_*_BIND` to choose persistence locations on the host disk.
+- `TORCH_CHANNEL` (`stable` or `nightly`).
+- `COMFYUI_REF` (ComfyUI tag or commit).
 
-3. Ejecuta ComfyUI:
+3. Run ComfyUI:
 
 ```bash
-# Sin GPU (local)
+# No GPU (local)
 ./scripts/run-comfyui.sh local up
 
-# Con GPU NVIDIA
+# With NVIDIA GPU
 ./scripts/run-comfyui.sh gpu up
 ```
 
@@ -68,145 +68,145 @@ cp .env.example .env
 
 ```bash
 ./scripts/run-comfyui.sh local logs
-# o
+# or
 ./scripts/run-comfyui.sh gpu logs
 ```
 
-UI por defecto: `http://localhost:8188`
+Default UI: `http://localhost:8188`
 
-## Manager y Previews
+## Manager and Previews
 
 ### ComfyUI-Manager
 
-- El contenedor instala `manager_requirements.txt` automáticamente cuando ese archivo está disponible.
-- El arranque usa por defecto `--enable-manager`.
+- The container installs `manager_requirements.txt` automatically when that file exists.
+- Startup enables the manager by default with `--enable-manager`.
 
-### Preview de alta calidad
+### High-Quality Preview
 
-- Por defecto se aplica `--preview-method auto`.
-- Para previews TAESD de alta calidad, coloca estos archivos en `data/models/vae_approx`:
-	- `taesd_decoder.pth`
-	- `taesdxl_decoder.pth`
-	- `taesd3_decoder.pth`
-	- `taef1_decoder.pth`
+- By default, startup uses `--preview-method auto`.
+- For high-quality TAESD previews, place these files in `data/models/vae_approx`:
+  - `taesd_decoder.pth`
+  - `taesdxl_decoder.pth`
+  - `taesd3_decoder.pth`
+  - `taef1_decoder.pth`
 
-Después reinicia ComfyUI y usa en `.env`:
+Then restart ComfyUI and use this in `.env`:
 
 ```bash
 COMFYUI_EXTRA_ARGS=--enable-manager --preview-method taesd
 ```
 
-## Canales de PyTorch (NVIDIA)
+## PyTorch Channels (NVIDIA)
 
-Este repo sigue lo indicado por ComfyUI:
+This repository follows the official ComfyUI recommendation:
 
-- Estable (por defecto):
+- Stable (default):
 
 ```bash
 pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
 ```
 
-- Nightly opcional:
+- Optional nightly:
 
 ```bash
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu132
 ```
 
-Aquí se controla con `TORCH_CHANNEL`:
+Channel selection is controlled with `TORCH_CHANNEL`:
 
-- `TORCH_CHANNEL=stable` usa `cu130`.
-- `TORCH_CHANNEL=nightly` usa nightly `cu132`.
+- `TORCH_CHANNEL=stable` uses `cu130`.
+- `TORCH_CHANNEL=nightly` uses nightly `cu132`.
 
-Cuando cambies canal, reconstruye imagen:
+When you change channel, rebuild the image:
 
 ```bash
 ./scripts/run-comfyui.sh local build --no-cache
 ```
 
-## Estructura de carpetas y commits
+## Folder Structure and Commits
 
-Se crean automáticamente carpetas de uso de ComfyUI dentro de `data/`.
+ComfyUI runtime directories are created automatically under `data/`.
 
-- Carpetas con `.gitkeep` (versionadas):
-	- `data/models/checkpoints`
-	- `data/models/vae`
-	- `data/models/vae_approx`
-	- `data/models/loras`
-	- `data/models/text_encoders`
-	- `data/models/diffusion_models`
-	- `data/custom_nodes`
-	- `data/input`
-	- `data/output`
-	- `data/user`
-	- `data/temp`
+- Folders with `.gitkeep` (tracked):
+  - `data/models/checkpoints`
+  - `data/models/vae`
+  - `data/models/vae_approx`
+  - `data/models/loras`
+  - `data/models/text_encoders`
+  - `data/models/diffusion_models`
+  - `data/custom_nodes`
+  - `data/input`
+  - `data/output`
+  - `data/user`
+  - `data/temp`
 
-Todo archivo nuevo dentro de esas carpetas queda ignorado por git (solo se mantiene `.gitkeep`).
+Any new file inside those folders is ignored by git (only `.gitkeep` is tracked).
 
-- Carpeta de workflows (sin `.gitkeep`):
-	- `data/workflows`
-	- `data/workflows/editing`
+- Workflows folders (without `.gitkeep`):
+  - `data/workflows`
+  - `data/workflows/editing`
 
-Estas carpetas están ignoradas por git por diseño: lo que guardes ahí nunca pedirá commit.
+These folders are intentionally git-ignored: anything saved there will never be included in commits.
 
 ## Workflows
 
-Guardar workflow (si no pasas archivo, toma el último de `data/user/default/workflows`):
+Save a workflow (if no source file is provided, it uses the latest JSON from `data/user/default/workflows`):
 
 ```bash
 ./scripts/workflow-save.sh
 ```
 
-Guardar directamente en carpeta de edición:
+Save directly into the editing folder:
 
 ```bash
 ./scripts/workflow-save.sh --editing
 ```
 
-Mover un workflow existente a carpeta de edición:
+Move an existing workflow into the editing folder:
 
 ```bash
-./scripts/workflow-move-to-edit.sh mi_workflow.json
+./scripts/workflow-move-to-edit.sh my_workflow.json
 ```
 
-## Script para actualizar COMFYUI_REF
+## Script to Update COMFYUI_REF
 
-Actualizar a la última tag disponible:
+Update to the latest available tag:
 
 ```bash
 ./scripts/update-comfyui-ref.sh
 ```
 
-Fijar una referencia concreta:
+Pin a specific reference:
 
 ```bash
 ./scripts/update-comfyui-ref.sh --ref v0.9.2 --file .env
 ```
 
-## Operación manual con compose
+## Manual Compose Operation
 
-Uso local (sin GPU):
+Local usage (no GPU):
 
 ```bash
 docker compose up --build -d
 docker compose logs -f comfyui
 ```
 
-UI por defecto: `http://localhost:8188`
+Default UI: `http://localhost:8188`
 
-Detener:
+Stop:
 
 ```bash
 docker compose down
 ```
 
-Uso en servidor con GPU (Lightning):
+Usage on GPU host (Lightning):
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build -d
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml logs -f comfyui
 ```
 
-Detener:
+Stop:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml down
@@ -222,9 +222,9 @@ docker compose -f docker-compose.yml -f docker-compose.gpu.yml down
 ./scripts/verify-gpu.sh
 ```
 
-## Persistencia (bind mounts)
+## Persistence (bind mounts)
 
-Por defecto se montan estas rutas host (configurables en `.env`):
+By default, these host paths are mounted (configurable in `.env`):
 
 - `./data/models` -> `/opt/comfyui/models`
 - `./data/custom_nodes` -> `/opt/comfyui/custom_nodes`
@@ -234,39 +234,39 @@ Por defecto se montan estas rutas host (configurables en `.env`):
 - `./data/temp` -> `/opt/comfyui/temp`
 - `./data/workflows` -> `/opt/comfyui/workflows`
 
-## Actualizar versión de ComfyUI
+## Update ComfyUI Version
 
-1. Actualiza ref:
+1. Update the reference:
 
 ```bash
 ./scripts/update-comfyui-ref.sh
 ```
 
-2. Reconstruye:
+2. Rebuild:
 
 ```bash
 docker compose build --no-cache comfyui
 ```
 
-3. Levanta de nuevo el stack.
+3. Start the stack again.
 
 ## Troubleshooting
 
 ### "Torch not compiled with CUDA enabled"
 
-- Verifica que estás arrancando con override GPU (`docker-compose.gpu.yml`).
-- Verifica que el host expone GPU al runtime (`nvidia-smi` en host y dentro del contenedor si aplica).
-- Rebuild si cambiaste canal/versiones.
+- Verify you are starting with the GPU override (`docker-compose.gpu.yml`).
+- Verify the host exposes the GPU to the container runtime (`nvidia-smi` on host and inside the container when applicable).
+- Rebuild if you changed channel or versions.
 
-### Problemas de permisos en carpetas montadas
+### Permission Issues in Mounted Folders
 
-- Ajusta `LOCAL_UID` y `LOCAL_GID` en `.env` con los valores reales del usuario del host.
+- Adjust `LOCAL_UID` and `LOCAL_GID` in `.env` to match the real host user values.
 
-### ComfyUI levanta, pero no genera imágenes
+### ComfyUI Starts but Does Not Generate Images
 
-- Comprueba que tienes modelos en `/opt/comfyui/models/checkpoints` (bind mount `COMFY_MODELS_BIND`).
+- Make sure you have models in `/opt/comfyui/models/checkpoints` (bind mount `COMFY_MODELS_BIND`).
 
-## Notas
+## Notes
 
-- En desarrollo local sin GPU, mantén `COMFY_PRECHECK_CUDA=false`.
-- Para forzar validación CUDA al inicio en host GPU, usa `COMFY_PRECHECK_CUDA=true`.
+- For local development without GPU, keep `COMFY_PRECHECK_CUDA=false`.
+- To force CUDA validation at startup on a GPU host, set `COMFY_PRECHECK_CUDA=true`.
