@@ -84,6 +84,7 @@ Default UI: `http://localhost:8188`
 
 - The container installs `manager_requirements.txt` automatically when that file exists.
 - Startup enables the manager by default with `--enable-manager`.
+- The image installs `matrix-nio` by default (`INSTALL_MATRIX_NIO=true`) to avoid the manager warning about matrix sharing dependency.
 
 ### High-Quality Preview
 

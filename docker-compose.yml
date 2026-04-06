@@ -6,6 +6,7 @@ services:
       args:
         COMFYUI_REF: ${COMFYUI_REF:-v0.9.2}
         TORCH_CHANNEL: ${TORCH_CHANNEL:-stable}
+        INSTALL_MATRIX_NIO: ${INSTALL_MATRIX_NIO:-true}
     image: ${IMAGE_NAME:-comfyui-local}:${IMAGE_TAG:-latest}
     container_name: comfyui
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
