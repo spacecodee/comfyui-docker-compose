@@ -44,6 +44,8 @@ for dir in "${required_dirs[@]}"; do
   fi
 done
 
+/usr/local/bin/install-custom-node-deps.sh
+
 if [[ "$MANAGER_ENFORCE_CONFIG" == "true" ]]; then
   MANAGER_CONFIG_PATH="$MANAGER_CONFIG_PATH" \
   MANAGER_SECURITY_LEVEL="$MANAGER_SECURITY_LEVEL" \

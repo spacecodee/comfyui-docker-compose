@@ -67,7 +67,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 
 COPY scripts/preflight.sh /usr/local/bin/preflight.sh
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/preflight.sh /usr/local/bin/entrypoint.sh
+COPY scripts/install-custom-node-deps.sh /usr/local/bin/install-custom-node-deps.sh
+RUN chmod +x /usr/local/bin/preflight.sh /usr/local/bin/entrypoint.sh /usr/local/bin/install-custom-node-deps.sh
 
 EXPOSE 8188
 

@@ -119,6 +119,12 @@ This is useful to confirm startup and detect runtime issues quickly.
 - Image build applies write permissions for Python runtime packages to `LOCAL_UID/LOCAL_GID`, so manager-installed Python dependencies can be installed without root.
 - Runtime sets `UV_LINK_MODE=copy` by default to avoid hardlink warnings in containerized filesystems.
 - Preflight now validates imports for `cv2`, `diffusers`, `transformers`, and `peft`, and prints the real exception if one fails.
+- Preflight also scans mounted custom nodes and installs their dependencies automatically from:
+  - `requirements.txt`
+  - `requirements-*.txt` / `requirements_*.txt`
+  - `pyproject.toml` (`[project].dependencies`)
+- To avoid reinstalling on every start, dependency manifests are hashed and cached in:
+  - `/opt/comfyui/user/.cache/custom-node-deps-state.json`
 
 ### High-Quality Preview
 
@@ -467,6 +473,24 @@ Then rebuild without cache and restart:
 ```
 
 After restart, check preflight logs. They now show the exact failing import (if any), instead of only the generic `Module 'diffusers' load failed` message.
+
+### Custom nodes fail after container recreation
+
+This stack auto-installs dependencies for mounted custom nodes on startup, so recreating the container does not lose Python packages required by those nodes.
+
+Controls in `.env`:
+
+```bash
+COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS=true
+COMFY_CUSTOM_NODE_DEPS_STRICT=false
+COMFY_CUSTOM_NODE_DEPS_FORCE=false
+```
+
+- `COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS=true`: enables scanning/install.
+- `COMFY_CUSTOM_NODE_DEPS_STRICT=true`: fail startup if any dependency install fails.
+- `COMFY_CUSTOM_NODE_DEPS_FORCE=true`: force reinstall even when manifests are unchanged.
+
+If you add or update a custom node dependency manifest, restart ComfyUI and preflight will apply the changes automatically.
 
 ### UV warning: Failed to hardlink files
 
