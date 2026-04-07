@@ -215,6 +215,73 @@ Move an existing workflow into the editing folder:
 ./scripts/workflow-move-to-edit.sh my_workflow.json
 ```
 
+## Where Installed Files Appear
+
+- Models:
+  - `data/models/<category>` (for example `data/models/checkpoints`, `data/models/loras`, etc.)
+
+- Custom nodes installed by ComfyUI-Manager:
+  - Usually: `data/custom_nodes`
+  - Depending on manager/user mode configuration, they may appear under:
+    - `data/user/default/ComfyUI/custom_nodes`
+
+- Workflows saved from the ComfyUI UI:
+  - Default UI save location: `data/user/default/workflows`
+  - `data/workflows` is your local archive/edit area managed by scripts in this repository.
+
+Path mirroring configured in compose:
+
+Note: using the same source with two different targets is intentional. It keeps both path conventions in sync, so writing through either container path updates the same host folder.
+
+- `data/models` is mounted to both:
+  - `/opt/comfyui/models`
+  - `/opt/comfyui/user/default/ComfyUI/models`
+
+- `data/custom_nodes` is mounted to both:
+  - `/opt/comfyui/custom_nodes`
+  - `/opt/comfyui/user/default/ComfyUI/custom_nodes`
+
+- `data/input` is mounted to both:
+  - `/opt/comfyui/input`
+  - `/opt/comfyui/user/default/ComfyUI/input`
+
+- `data/output` is mounted to both:
+  - `/opt/comfyui/output`
+  - `/opt/comfyui/user/default/ComfyUI/output`
+
+- `data/user` is mounted to both:
+  - `/opt/comfyui/user`
+  - `/opt/comfyui/user/default/ComfyUI/user`
+
+- `data/temp` is mounted to both:
+  - `/opt/comfyui/temp`
+  - `/opt/comfyui/user/default/ComfyUI/temp`
+
+- `data/workflows` is mounted to both:
+  - `/opt/comfyui/workflows`
+  - `/opt/comfyui/user/default/workflows`
+  - `/opt/comfyui/user/default/ComfyUI/workflows`
+
+This means installs/saves done from ComfyUI-Manager/UI will be visible in the same host folders in this repository.
+
+If you do not see a newly installed custom node in `data/custom_nodes`, check `data/user/default/ComfyUI/custom_nodes`.
+
+## Stop ComfyUI
+
+Use the run script with `down`:
+
+```bash
+./scripts/run-comfyui.sh gpu down
+```
+
+For local mode:
+
+```bash
+./scripts/run-comfyui.sh local down
+```
+
+Note: `Ctrl + C` only stops the live logs stream when running `./scripts/run-comfyui.sh gpu logs`. It does not stop the detached container started with `up`.
+
 ## Script to Update COMFYUI_REF
 
 Update to the latest available tag:
