@@ -231,40 +231,19 @@ Move an existing workflow into the editing folder:
 
 Path mirroring configured in compose:
 
-Note: using the same source with two different targets is intentional. It keeps both path conventions in sync, so writing through either container path updates the same host folder.
+Single-path mapping configured in compose:
 
-- `data/models` is mounted to both:
-  - `/opt/comfyui/models`
-  - `/opt/comfyui/user/default/ComfyUI/models`
+- `data/models` -> `/opt/comfyui/models`
+- `data/custom_nodes` -> `/opt/comfyui/custom_nodes`
+- `data/input` -> `/opt/comfyui/input`
+- `data/output` -> `/opt/comfyui/output`
+- `data/user` -> `/opt/comfyui/user`
+- `data/temp` -> `/opt/comfyui/temp`
+- `data/workflows` -> `/opt/comfyui/workflows`
 
-- `data/custom_nodes` is mounted to both:
-  - `/opt/comfyui/custom_nodes`
-  - `/opt/comfyui/user/default/ComfyUI/custom_nodes`
+No duplicate bind mounts are used.
 
-- `data/input` is mounted to both:
-  - `/opt/comfyui/input`
-  - `/opt/comfyui/user/default/ComfyUI/input`
-
-- `data/output` is mounted to both:
-  - `/opt/comfyui/output`
-  - `/opt/comfyui/user/default/ComfyUI/output`
-
-- `data/user` is mounted to both:
-  - `/opt/comfyui/user`
-  - `/opt/comfyui/user/default/ComfyUI/user`
-
-- `data/temp` is mounted to both:
-  - `/opt/comfyui/temp`
-  - `/opt/comfyui/user/default/ComfyUI/temp`
-
-- `data/workflows` is mounted to both:
-  - `/opt/comfyui/workflows`
-  - `/opt/comfyui/user/default/workflows`
-  - `/opt/comfyui/user/default/ComfyUI/workflows`
-
-This means installs/saves done from ComfyUI-Manager/UI will be visible in the same host folders in this repository.
-
-If you do not see a newly installed custom node in `data/custom_nodes`, check `data/user/default/ComfyUI/custom_nodes`.
+If ComfyUI-Manager stores a node under the user directory convention, you can still find it in `data/user/...`.
 
 ## Stop ComfyUI
 

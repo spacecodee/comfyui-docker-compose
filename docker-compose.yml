@@ -30,47 +30,23 @@ services:
         source: ${COMFY_MODELS_BIND:-./data/models}
         target: /opt/comfyui/models
       - type: bind
-        source: ${COMFY_MODELS_BIND:-./data/models}
-        target: /opt/comfyui/user/default/ComfyUI/models
-      - type: bind
         source: ${COMFY_CUSTOM_NODES_BIND:-./data/custom_nodes}
         target: /opt/comfyui/custom_nodes
-      - type: bind
-        source: ${COMFY_CUSTOM_NODES_BIND:-./data/custom_nodes}
-        target: /opt/comfyui/user/default/ComfyUI/custom_nodes
       - type: bind
         source: ${COMFY_INPUT_BIND:-./data/input}
         target: /opt/comfyui/input
       - type: bind
-        source: ${COMFY_INPUT_BIND:-./data/input}
-        target: /opt/comfyui/user/default/ComfyUI/input
-      - type: bind
         source: ${COMFY_OUTPUT_BIND:-./data/output}
         target: /opt/comfyui/output
-      - type: bind
-        source: ${COMFY_OUTPUT_BIND:-./data/output}
-        target: /opt/comfyui/user/default/ComfyUI/output
       - type: bind
         source: ${COMFY_USER_BIND:-./data/user}
         target: /opt/comfyui/user
       - type: bind
-        source: ${COMFY_USER_BIND:-./data/user}
-        target: /opt/comfyui/user/default/ComfyUI/user
-      - type: bind
         source: ${COMFY_TEMP_BIND:-./data/temp}
         target: /opt/comfyui/temp
       - type: bind
-        source: ${COMFY_TEMP_BIND:-./data/temp}
-        target: /opt/comfyui/user/default/ComfyUI/temp
-      - type: bind
         source: ${COMFY_WORKFLOWS_BIND:-./data/workflows}
         target: /opt/comfyui/workflows
-      - type: bind
-        source: ${COMFY_WORKFLOWS_BIND:-./data/workflows}
-        target: /opt/comfyui/user/default/workflows
-      - type: bind
-        source: ${COMFY_WORKFLOWS_BIND:-./data/workflows}
-        target: /opt/comfyui/user/default/ComfyUI/workflows
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${COMFYUI_PORT:-8188}/ > /dev/null || exit 1"]
       interval: 30s
