@@ -43,8 +43,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
     else \
       echo "INSTALL_MATRIX_NIO=false, skipping matrix-nio install"; \
     fi \
-    && chown -R "${LOCAL_UID}:${LOCAL_GID}" /usr/local/lib/python3.13/site-packages /usr/local/bin \
-    && chmod -R u+rwX /usr/local/lib/python3.13/site-packages /usr/local/bin
+    && chown -R "${LOCAL_UID}:${LOCAL_GID}" /usr/local/lib/python3.13/site-packages /usr/local/bin /usr/local/share \
+    && chmod -R u+rwX /usr/local/lib/python3.13/site-packages /usr/local/bin /usr/local/share
 
 COPY scripts/preflight.sh /usr/local/bin/preflight.sh
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh

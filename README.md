@@ -115,6 +115,7 @@ This is useful to confirm startup and detect runtime issues quickly.
   - `network_mode=personal_cloud`
   - Config path: `/opt/comfyui/user/__manager/config.ini`
 - Image build applies write permissions for Python runtime packages to `LOCAL_UID/LOCAL_GID`, so manager-installed Python dependencies can be installed without root.
+- Runtime sets `UV_LINK_MODE=copy` by default to avoid hardlink warnings in containerized filesystems.
 
 ### High-Quality Preview
 
@@ -429,6 +430,18 @@ id -g
 ```
 
 This project propagates `LOCAL_UID/LOCAL_GID` to Docker build and assigns write access for runtime package installation.
+
+### UV warning: Failed to hardlink files
+
+This warning is usually non-fatal. It means uv could not use hardlinks (common in container/bind mount setups) and falls back to file copy.
+
+This project defaults to:
+
+```bash
+UV_LINK_MODE=copy
+```
+
+so the warning is suppressed and behavior is explicit.
 
 ### "No username set in the environment" or "getpwuid(): uid not found"
 
