@@ -22,5 +22,7 @@ data/user/**
 data/temp/**
 !data/temp/.gitkeep
 
-# Workflows are intentionally always local and never committed.
-data/workflows/
+# Workflows policy:
+# - Track files in data/workflows
+# - Ignore only work-in-progress files in data/workflows/editing
+data/workflows/editing/**

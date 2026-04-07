@@ -193,11 +193,14 @@ The model subfolders above are intentionally aligned with the current upstream t
 
 Any new file inside those folders is ignored by git (only `.gitkeep` is tracked).
 
-- Workflows folders (without `.gitkeep`):
-  - `data/workflows`
-  - `data/workflows/editing`
+- Workflows folders:
+  - `data/workflows` (tracked and commit-ready)
+  - `data/workflows/editing` (ignored from git for work-in-progress edits)
 
-These folders are intentionally git-ignored: anything saved there will never be included in commits.
+Workflow commit policy:
+
+- Files under `data/workflows` are versioned.
+- Files under `data/workflows/editing` are not included in commits.
 
 ## Workflows
 
@@ -231,7 +234,8 @@ Move an existing workflow into the editing folder:
 
 - Workflows saved from the ComfyUI UI:
   - Default UI save location: `data/user/default/workflows`
-  - `data/workflows` is your local archive/edit area managed by scripts in this repository.
+  - `data/workflows` is your commit-ready workflow folder in this repository.
+  - `data/workflows/editing` is your local non-commit editing area.
 
 Single-path mapping configured in compose:
 
