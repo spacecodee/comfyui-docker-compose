@@ -110,6 +110,7 @@ This is useful to confirm startup and detect runtime issues quickly.
 - The container installs `manager_requirements.txt` automatically when that file exists.
 - Startup enables the manager by default with `--enable-manager`.
 - The image installs `matrix-nio` by default (`INSTALL_MATRIX_NIO=true`) to avoid the manager warning about matrix sharing dependency.
+- The image installs `opencv-python-headless` by default (`INSTALL_OPENCV_HEADLESS=true`) to cover custom nodes that require `cv2`.
 - Preflight enforces manager policy defaults to allow install/download actions in remote hosts:
   - `security_level=normal`
   - `network_mode=personal_cloud`
@@ -430,6 +431,21 @@ id -g
 ```
 
 This project propagates `LOCAL_UID/LOCAL_GID` to Docker build and assigns write access for runtime package installation.
+
+### "OpenCV not installed"
+
+The image installs OpenCV headless by default:
+
+```bash
+INSTALL_OPENCV_HEADLESS=true
+```
+
+If you still see this message, rebuild the image without cache and restart:
+
+```bash
+./scripts/run-comfyui.sh gpu build --no-cache
+./scripts/run-comfyui.sh gpu up
+```
 
 ### UV warning: Failed to hardlink files
 

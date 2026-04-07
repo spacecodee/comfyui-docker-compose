@@ -3,6 +3,7 @@ FROM python:3.13-slim-bookworm
 ARG COMFYUI_REF=v0.9.2
 ARG TORCH_CHANNEL=stable
 ARG INSTALL_MATRIX_NIO=true
+ARG INSTALL_OPENCV_HEADLESS=true
 ARG LOCAL_UID=1000
 ARG LOCAL_GID=1000
 
@@ -42,6 +43,11 @@ RUN python -m pip install --upgrade pip setuptools wheel \
       python -m pip install matrix-nio; \
     else \
       echo "INSTALL_MATRIX_NIO=false, skipping matrix-nio install"; \
+    fi \
+    && if [ "${INSTALL_OPENCV_HEADLESS}" = "true" ]; then \
+      python -m pip install opencv-python-headless; \
+    else \
+      echo "INSTALL_OPENCV_HEADLESS=false, skipping opencv-python-headless install"; \
     fi \
     && chown -R "${LOCAL_UID}:${LOCAL_GID}" /usr/local/lib/python3.13/site-packages /usr/local/bin /usr/local/share \
     && chmod -R u+rwX /usr/local/lib/python3.13/site-packages /usr/local/bin /usr/local/share
