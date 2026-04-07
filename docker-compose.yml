@@ -8,6 +8,7 @@ services:
         TORCH_CHANNEL: ${TORCH_CHANNEL:-stable}
         INSTALL_MATRIX_NIO: ${INSTALL_MATRIX_NIO:-true}
         INSTALL_OPENCV_HEADLESS: ${INSTALL_OPENCV_HEADLESS:-true}
+        INSTALL_EASYUSE_REPAIR_DEPS: ${INSTALL_EASYUSE_REPAIR_DEPS:-true}
         LOCAL_UID: ${LOCAL_UID:-1000}
         LOCAL_GID: ${LOCAL_GID:-1000}
     image: ${IMAGE_NAME:-comfyui-local}:${IMAGE_TAG:-latest}

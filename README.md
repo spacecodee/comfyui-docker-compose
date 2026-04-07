@@ -111,12 +111,14 @@ This is useful to confirm startup and detect runtime issues quickly.
 - Startup enables the manager by default with `--enable-manager`.
 - The image installs `matrix-nio` by default (`INSTALL_MATRIX_NIO=true`) to avoid the manager warning about matrix sharing dependency.
 - The image installs `opencv-python-headless` by default (`INSTALL_OPENCV_HEADLESS=true`) to cover custom nodes that require `cv2`.
+- The image preinstalls Easy-Use repair dependencies by default (`INSTALL_EASYUSE_REPAIR_DEPS=true`) to avoid import-time failures in custom nodes that depend on `diffusers` internals.
 - Preflight enforces manager policy defaults to allow install/download actions in remote hosts:
   - `security_level=normal`
   - `network_mode=personal_cloud`
   - Config path: `/opt/comfyui/user/__manager/config.ini`
 - Image build applies write permissions for Python runtime packages to `LOCAL_UID/LOCAL_GID`, so manager-installed Python dependencies can be installed without root.
 - Runtime sets `UV_LINK_MODE=copy` by default to avoid hardlink warnings in containerized filesystems.
+- Preflight now validates imports for `cv2`, `diffusers`, `transformers`, and `peft`, and prints the real exception if one fails.
 
 ### High-Quality Preview
 
@@ -446,6 +448,25 @@ If you still see this message, rebuild the image without cache and restart:
 ./scripts/run-comfyui.sh gpu build --no-cache
 ./scripts/run-comfyui.sh gpu up
 ```
+
+### "Package diffusers installed successfully" but module load still fails
+
+This usually means `diffusers` was present but one of its related imports failed (for example `transformers`, `peft`, or `huggingface_hub` compatibility).
+
+This project now preinstalls a known-good dependency set for that scenario:
+
+```bash
+INSTALL_EASYUSE_REPAIR_DEPS=true
+```
+
+Then rebuild without cache and restart:
+
+```bash
+./scripts/run-comfyui.sh gpu build --no-cache
+./scripts/run-comfyui.sh gpu up
+```
+
+After restart, check preflight logs. They now show the exact failing import (if any), instead of only the generic `Module 'diffusers' load failed` message.
 
 ### UV warning: Failed to hardlink files
 

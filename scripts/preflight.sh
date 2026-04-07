@@ -89,6 +89,24 @@ if torch.cuda.is_available():
     print(f"[preflight] cuda_device_count={torch.cuda.device_count()}")
 PY
 
+python - <<'PY'
+checks = [
+  ("cv2", "import cv2"),
+  ("diffusers", "import diffusers"),
+  ("diffusers.configuration_utils", "from diffusers.configuration_utils import ConfigMixin"),
+  ("diffusers.models.modeling_utils", "from diffusers.models.modeling_utils import ModelMixin"),
+  ("transformers", "import transformers"),
+  ("peft", "import peft"),
+]
+
+for name, stmt in checks:
+  try:
+    exec(stmt, {})
+    print(f"[preflight] import_ok={name}")
+  except Exception as exc:
+    print(f"[preflight] WARNING: import_failed={name}: {exc}")
+PY
+
 if [[ "$PRECHECK_CUDA" == "true" ]]; then
   python - <<'PY'
 import torch

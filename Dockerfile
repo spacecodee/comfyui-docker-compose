@@ -4,6 +4,7 @@ ARG COMFYUI_REF=v0.9.2
 ARG TORCH_CHANNEL=stable
 ARG INSTALL_MATRIX_NIO=true
 ARG INSTALL_OPENCV_HEADLESS=true
+ARG INSTALL_EASYUSE_REPAIR_DEPS=true
 ARG LOCAL_UID=1000
 ARG LOCAL_GID=1000
 
@@ -48,6 +49,18 @@ RUN python -m pip install --upgrade pip setuptools wheel \
       python -m pip install opencv-python-headless; \
     else \
       echo "INSTALL_OPENCV_HEADLESS=false, skipping opencv-python-headless install"; \
+    fi \
+    && if [ "${INSTALL_EASYUSE_REPAIR_DEPS}" = "true" ]; then \
+      python -m pip install --upgrade \
+        "numpy>=1.19.0" \
+        "diffusers>=0.32.2" \
+        "huggingface_hub>=0.25.0" \
+        "transformers>=4.48.0" \
+        "peft>=0.14.0" \
+        "protobuf>=4.25.3" \
+        accelerate; \
+    else \
+      echo "INSTALL_EASYUSE_REPAIR_DEPS=false, skipping Easy-Use repair dependency preinstall"; \
     fi \
     && chown -R "${LOCAL_UID}:${LOCAL_GID}" /usr/local/lib/python3.13/site-packages /usr/local/bin /usr/local/share \
     && chmod -R u+rwX /usr/local/lib/python3.13/site-packages /usr/local/bin /usr/local/share
