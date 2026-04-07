@@ -13,6 +13,11 @@ HOME_DIR="${HOME:-/opt/comfyui/user}"
 XDG_CACHE_HOME_DIR="${XDG_CACHE_HOME:-${HOME_DIR}/.cache}"
 TORCHINDUCTOR_CACHE_DIR_VALUE="${TORCHINDUCTOR_CACHE_DIR:-${XDG_CACHE_HOME_DIR}/torchinductor}"
 PRECHECK_CUDA="${COMFY_PRECHECK_CUDA:-false}"
+MANAGER_ENFORCE_CONFIG="${COMFY_MANAGER_ENFORCE_CONFIG:-true}"
+MANAGER_SECURITY_LEVEL="${COMFY_MANAGER_SECURITY_LEVEL:-normal}"
+MANAGER_NETWORK_MODE="${COMFY_MANAGER_NETWORK_MODE:-personal_cloud}"
+MANAGER_CONFIG_PATH="${COMFY_MANAGER_CONFIG_PATH:-${USER_DIR}/__manager/config.ini}"
+MANAGER_CONFIG_DIR="$(dirname "$MANAGER_CONFIG_PATH")"
 
 required_dirs=(
   "$MODELS_DIR"
@@ -26,6 +31,7 @@ required_dirs=(
   "$HOME_DIR"
   "$XDG_CACHE_HOME_DIR"
   "$TORCHINDUCTOR_CACHE_DIR_VALUE"
+  "$MANAGER_CONFIG_DIR"
 )
 
 echo "[preflight] python: $(python --version 2>&1)"
@@ -37,6 +43,36 @@ for dir in "${required_dirs[@]}"; do
     exit 1
   fi
 done
+
+if [[ "$MANAGER_ENFORCE_CONFIG" == "true" ]]; then
+  MANAGER_CONFIG_PATH="$MANAGER_CONFIG_PATH" \
+  MANAGER_SECURITY_LEVEL="$MANAGER_SECURITY_LEVEL" \
+  MANAGER_NETWORK_MODE="$MANAGER_NETWORK_MODE" \
+  python - <<'PY'
+import configparser
+import os
+
+config_path = os.environ["MANAGER_CONFIG_PATH"]
+security_level = os.environ["MANAGER_SECURITY_LEVEL"]
+network_mode = os.environ["MANAGER_NETWORK_MODE"]
+
+config = configparser.ConfigParser(strict=False)
+if os.path.exists(config_path):
+    config.read(config_path)
+
+if "default" not in config:
+    config["default"] = {}
+
+config["default"]["security_level"] = security_level
+config["default"]["network_mode"] = network_mode
+
+with open(config_path, "w", encoding="utf-8") as f:
+    config.write(f)
+
+print(f"[preflight] manager config updated: {config_path}")
+print(f"[preflight] manager security_level={security_level}, network_mode={network_mode}")
+PY
+fi
 
 python - <<'PY'
 import sys

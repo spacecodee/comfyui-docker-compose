@@ -21,6 +21,10 @@ services:
       COMFYUI_PORT: ${COMFYUI_PORT:-8188}
       COMFYUI_EXTRA_ARGS: ${COMFYUI_EXTRA_ARGS:-}
       COMFY_PRECHECK_CUDA: ${COMFY_PRECHECK_CUDA:-false}
+      COMFY_MANAGER_ENFORCE_CONFIG: ${COMFY_MANAGER_ENFORCE_CONFIG:-true}
+      COMFY_MANAGER_SECURITY_LEVEL: ${COMFY_MANAGER_SECURITY_LEVEL:-normal}
+      COMFY_MANAGER_NETWORK_MODE: ${COMFY_MANAGER_NETWORK_MODE:-personal_cloud}
+      COMFY_MANAGER_CONFIG_PATH: /opt/comfyui/user/__manager/config.ini
       COMFY_WORKFLOWS_DIR: /opt/comfyui/workflows
       COMFY_WORKFLOWS_EDIT_DIR: /opt/comfyui/workflows/editing
     ports:

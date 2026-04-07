@@ -110,6 +110,10 @@ This is useful to confirm startup and detect runtime issues quickly.
 - The container installs `manager_requirements.txt` automatically when that file exists.
 - Startup enables the manager by default with `--enable-manager`.
 - The image installs `matrix-nio` by default (`INSTALL_MATRIX_NIO=true`) to avoid the manager warning about matrix sharing dependency.
+- Preflight enforces manager policy defaults to allow install/download actions in remote hosts:
+  - `security_level=normal`
+  - `network_mode=personal_cloud`
+  - Config path: `/opt/comfyui/user/__manager/config.ini`
 
 ### High-Quality Preview
 
@@ -228,8 +232,6 @@ Move an existing workflow into the editing folder:
 - Workflows saved from the ComfyUI UI:
   - Default UI save location: `data/user/default/workflows`
   - `data/workflows` is your local archive/edit area managed by scripts in this repository.
-
-Path mirroring configured in compose:
 
 Single-path mapping configured in compose:
 
@@ -388,6 +390,27 @@ docker compose build --no-cache comfyui
 - Verify you are starting with the GPU override (`docker-compose.gpu.yml`).
 - Verify the host exposes the GPU to the container runtime (`nvidia-smi` on host and inside the container when applicable).
 - Rebuild if you changed channel or versions.
+
+### Manager error: security_level/network_mode restriction
+
+If logs show an error like:
+
+`security_level must be normal or below, and network_mode must be set to personal_cloud`
+
+make sure these values are set in `.env`:
+
+```bash
+COMFY_MANAGER_ENFORCE_CONFIG=true
+COMFY_MANAGER_SECURITY_LEVEL=normal
+COMFY_MANAGER_NETWORK_MODE=personal_cloud
+```
+
+Then rebuild and restart:
+
+```bash
+./scripts/run-comfyui.sh gpu build --no-cache
+./scripts/run-comfyui.sh gpu up
+```
 
 ### "No username set in the environment" or "getpwuid(): uid not found"
 
