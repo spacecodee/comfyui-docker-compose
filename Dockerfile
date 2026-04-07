@@ -3,6 +3,8 @@ FROM python:3.13-slim-bookworm
 ARG COMFYUI_REF=v0.9.2
 ARG TORCH_CHANNEL=stable
 ARG INSTALL_MATRIX_NIO=true
+ARG LOCAL_UID=1000
+ARG LOCAL_GID=1000
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_NO_CACHE_DIR=1 \
@@ -40,7 +42,9 @@ RUN python -m pip install --upgrade pip setuptools wheel \
       python -m pip install matrix-nio; \
     else \
       echo "INSTALL_MATRIX_NIO=false, skipping matrix-nio install"; \
-    fi
+    fi \
+    && chown -R "${LOCAL_UID}:${LOCAL_GID}" /usr/local/lib/python3.13/site-packages /usr/local/bin \
+    && chmod -R u+rwX /usr/local/lib/python3.13/site-packages /usr/local/bin
 
 COPY scripts/preflight.sh /usr/local/bin/preflight.sh
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh

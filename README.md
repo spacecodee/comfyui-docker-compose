@@ -114,6 +114,7 @@ This is useful to confirm startup and detect runtime issues quickly.
   - `security_level=normal`
   - `network_mode=personal_cloud`
   - Config path: `/opt/comfyui/user/__manager/config.ini`
+- Image build applies write permissions for Python runtime packages to `LOCAL_UID/LOCAL_GID`, so manager-installed Python dependencies can be installed without root.
 
 ### High-Quality Preview
 
@@ -415,6 +416,19 @@ Then rebuild and restart:
 ./scripts/run-comfyui.sh gpu build --no-cache
 ./scripts/run-comfyui.sh gpu up
 ```
+
+### Manager dependency install fails with permission denied
+
+If logs show an error like `Failed to create directory /usr/local/lib/python... site-packages ... Permission denied`, rebuild with the correct `LOCAL_UID` and `LOCAL_GID` from your host:
+
+```bash
+id -u
+id -g
+./scripts/run-comfyui.sh gpu build --no-cache
+./scripts/run-comfyui.sh gpu up
+```
+
+This project propagates `LOCAL_UID/LOCAL_GID` to Docker build and assigns write access for runtime package installation.
 
 ### "No username set in the environment" or "getpwuid(): uid not found"
 
