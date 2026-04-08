@@ -11,6 +11,7 @@ Usage:
   ./scripts/run-comfyui.sh start [-- <extra ComfyUI args>]
   ./scripts/run-comfyui.sh deps
   ./scripts/run-comfyui.sh preview [--method <method>] [--force]
+  ./scripts/run-comfyui.sh model-download [download-options]
   ./scripts/run-comfyui.sh -h | --help
 
 Defaults:
@@ -103,7 +104,7 @@ extra_args_has_preview_flag() {
 action="start"
 if [[ $# -gt 0 ]]; then
   case "$1" in
-    setup|start|deps|preview)
+    setup|start|deps|preview|model-download)
       action="$1"
       shift
       ;;
@@ -137,6 +138,9 @@ case "$action" in
     ;;
   preview)
     exec ./scripts/setup-preview-method.sh "$@"
+    ;;
+  model-download)
+    exec ./scripts/model-download.sh "$@"
     ;;
   start)
     ;;
