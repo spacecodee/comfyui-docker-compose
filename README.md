@@ -206,6 +206,8 @@ Configure .env as needed:
 - COMFYUI_HOST: web host binding.
 - COMFYUI_PORT: web port.
 - COMFY_AUTO_PUBLIC_BIND: auto-switch localhost host values to 0.0.0.0 in remote workspaces.
+- COMFY_AUTO_ENABLE_CORS_ON_REMOTE: auto-add --enable-cors-header in remote workspaces.
+- COMFYUI_CORS_ORIGIN: origin value passed to --enable-cors-header (default *).
 - COMFYUI_PREVIEW_METHOD: auto, taesd, latent2rgb, or none.
 - COMFYUI_EXTRA_ARGS: extra arguments passed to main.py.
 - COMFY_PREVIEW_AUTO_SETUP: download preview decoders during local setup.
@@ -231,10 +233,11 @@ Default branch in this repo config is COMFYUI_REF=master.
 If your browser shows HTTP 403 on a forwarded URL, check:
 
 - COMFYUI is listening on 0.0.0.0 (set COMFYUI_HOST=0.0.0.0).
+- CORS is enabled for remote proxies (set COMFY_AUTO_ENABLE_CORS_ON_REMOTE=true).
 - Port 8188 is shared/forwarded in your platform panel.
 - Your browser session is authorized for that workspace URL.
 
-This repo sets COMFYUI_HOST=0.0.0.0 and COMFY_AUTO_PUBLIC_BIND=true by default for remote compatibility.
+This repo sets COMFYUI_HOST=0.0.0.0, COMFY_AUTO_PUBLIC_BIND=true, and COMFY_AUTO_ENABLE_CORS_ON_REMOTE=true by default for remote compatibility.
 
 ## Preview Method (Automatic and Manual Download)
 

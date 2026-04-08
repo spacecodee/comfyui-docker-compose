@@ -207,6 +207,20 @@ manager_enabled_for_start() {
   [[ "$merged" =~ (^|[[:space:]])--enable-manager([=[:space:]]|$) ]]
 }
 
+cors_enabled_for_start() {
+  local merged="${COMFYUI_EXTRA_ARGS:-}"
+  local arg
+
+  for arg in "$@"; do
+    if [[ "$arg" == "--" ]]; then
+      continue
+    fi
+    merged+=" $arg"
+  done
+
+  [[ "$merged" =~ (^|[[:space:]])--enable-cors-header([=[:space:]]|$) ]]
+}
+
 repair_torchaudio_if_needed() {
   local enabled="$1"
 
@@ -594,6 +608,8 @@ auto_fix_torch_cuda130="${COMFY_AUTO_FIX_TORCH_CUDA130:-true}"
 auto_fix_torch_cuda130_force="${COMFY_AUTO_FIX_TORCH_CUDA130_FORCE:-false}"
 auto_fix_numpy_scipy_compat="${COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT:-true}"
 auto_public_bind="${COMFY_AUTO_PUBLIC_BIND:-true}"
+auto_enable_cors_on_remote="${COMFY_AUTO_ENABLE_CORS_ON_REMOTE:-true}"
+cors_origin="${COMFYUI_CORS_ORIGIN:-*}"
 cli_extra_args=("$@")
 
 case "$action" in
@@ -634,6 +650,7 @@ validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130" "$auto_fix_torch_cuda130"
 validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130_FORCE" "$auto_fix_torch_cuda130_force"
 validate_bool_setting "COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT" "$auto_fix_numpy_scipy_compat"
 validate_bool_setting "COMFY_AUTO_PUBLIC_BIND" "$auto_public_bind"
+validate_bool_setting "COMFY_AUTO_ENABLE_CORS_ON_REMOTE" "$auto_enable_cors_on_remote"
 
 if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
   python_bin="$venv_dir/bin/python"
@@ -685,6 +702,11 @@ fi
 host="$(resolve_bind_host)"
 port="${COMFYUI_PORT:-8188}"
 args=(--listen "$host" --port "$port")
+
+if [[ "$auto_enable_cors_on_remote" == "true" ]] && is_remote_workspace && ! cors_enabled_for_start "${cli_extra_args[@]}"; then
+  echo "[run-comfyui] remote workspace detected; enabling CORS header for origin: $cors_origin"
+  args+=(--enable-cors-header "$cors_origin")
+fi
 
 preview_method="$(resolve_preview_method)"
 if [[ -n "$preview_method" && ! extra_args_has_preview_flag ]]; then
