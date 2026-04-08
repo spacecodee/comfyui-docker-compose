@@ -1,25 +1,89 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-AUTO_INSTALL="${COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS:-true}"
-if [[ "$AUTO_INSTALL" != "true" ]]; then
-  echo "[custom-node-deps] auto install disabled (COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS=$AUTO_INSTALL)"
-  exit 0
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+load_env_vars() {
+    local env_file=""
+    if [[ -f "$ROOT_DIR/.env" ]]; then
+        env_file="$ROOT_DIR/.env"
+    elif [[ -f "$ROOT_DIR/.env.example" ]]; then
+        env_file="$ROOT_DIR/.env.example"
+    fi
+
+    if [[ -z "$env_file" ]]; then
+        return 0
+    fi
+
+    while IFS='=' read -r key value; do
+        value="${value%$'\r'}"
+        value="${value%\"}"
+        value="${value#\"}"
+        export "$key=$value"
+    done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" || true)
+}
+
+resolve_path() {
+    local path_value="$1"
+    if [[ "$path_value" = /* ]]; then
+        printf "%s" "$path_value"
+    else
+        printf "%s/%s" "$ROOT_DIR" "${path_value#./}"
+    fi
+}
+
+manual_mode=false
+if [[ "${1:-}" == "--manual" ]]; then
+    manual_mode=true
+    shift
 fi
 
-CUSTOM_NODES_DIR="${COMFY_CUSTOM_NODES_DIR:-/opt/comfyui/custom_nodes}"
-USER_DIR="${COMFY_USER_DIR:-/opt/comfyui/user}"
-STATE_FILE="${COMFY_CUSTOM_NODE_DEPS_STATE_FILE:-${USER_DIR}/.cache/custom-node-deps-state.json}"
-STRICT_MODE="${COMFY_CUSTOM_NODE_DEPS_STRICT:-false}"
-FORCE_MODE="${COMFY_CUSTOM_NODE_DEPS_FORCE:-false}"
+if [[ $# -gt 0 ]]; then
+    echo "Unknown option: $1" >&2
+    echo "Usage: ./scripts/install-custom-node-deps.sh [--manual]" >&2
+    exit 1
+fi
 
-mkdir -p "$(dirname "$STATE_FILE")"
+load_env_vars
 
-CUSTOM_NODES_DIR="$CUSTOM_NODES_DIR" \
-STATE_FILE="$STATE_FILE" \
-STRICT_MODE="$STRICT_MODE" \
-FORCE_MODE="$FORCE_MODE" \
-python - <<'PY'
+auto_install="${COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS:-true}"
+if [[ "$manual_mode" != "true" && "$auto_install" != "true" ]]; then
+    echo "[custom-node-deps] auto install disabled (COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS=$auto_install)"
+    exit 0
+fi
+
+comfy_dir="$(resolve_path "${COMFYUI_DIR:-./comfyui}")"
+venv_dir="$(resolve_path "${COMFY_VENV_DIR:-./.venv}")"
+
+if [[ -n "${COMFY_CUSTOM_NODES_DIR:-}" ]]; then
+    custom_nodes_dir="$(resolve_path "${COMFY_CUSTOM_NODES_DIR}")"
+else
+    custom_nodes_dir="$comfy_dir/custom_nodes"
+fi
+
+if [[ -n "${COMFY_CUSTOM_NODE_DEPS_STATE_FILE:-}" ]]; then
+    state_file="$(resolve_path "${COMFY_CUSTOM_NODE_DEPS_STATE_FILE}")"
+else
+    state_file="$comfy_dir/user/.cache/custom-node-deps-state.json"
+fi
+
+strict_mode="${COMFY_CUSTOM_NODE_DEPS_STRICT:-false}"
+force_mode="${COMFY_CUSTOM_NODE_DEPS_FORCE:-false}"
+python_bin="$venv_dir/bin/python"
+
+if [[ ! -x "$python_bin" ]]; then
+    echo "[custom-node-deps] python not found in virtual environment: $python_bin" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname "$state_file")"
+
+CUSTOM_NODES_DIR="$custom_nodes_dir" \
+STATE_FILE="$state_file" \
+STRICT_MODE="$strict_mode" \
+FORCE_MODE="$force_mode" \
+"$python_bin" - <<'PY'
 import hashlib
 import json
 import os

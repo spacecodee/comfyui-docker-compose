@@ -7,22 +7,18 @@ __pycache__/
 .vscode/
 .idea/
 
-# Runtime data from bind mounts.
-data/models/**
-!data/models/**/
-!data/models/**/.gitkeep
-data/custom_nodes/**
-!data/custom_nodes/.gitkeep
+# Local checkout and virtual environment.
+comfyui/
+.venv/
+
+# Input/output runtime data.
 data/input/**
 !data/input/.gitkeep
 data/output/**
 !data/output/.gitkeep
-data/user/**
-!data/user/.gitkeep
-data/temp/**
-!data/temp/.gitkeep
 
 # Workflows policy:
 # - Track files in data/workflows
 # - Ignore only work-in-progress files in data/workflows/editing
 data/workflows/editing/**
+!data/workflows/editing/.gitkeep

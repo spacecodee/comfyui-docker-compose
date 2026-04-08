@@ -6,10 +6,10 @@ cd "$ROOT_DIR"
 
 load_env_vars() {
   local env_file=""
-  if [[ -f .env ]]; then
-    env_file=.env
-  elif [[ -f .env.example ]]; then
-    env_file=.env.example
+  if [[ -f "$ROOT_DIR/.env" ]]; then
+    env_file="$ROOT_DIR/.env"
+  elif [[ -f "$ROOT_DIR/.env.example" ]]; then
+    env_file="$ROOT_DIR/.env.example"
   fi
 
   if [[ -z "$env_file" ]]; then
@@ -20,22 +20,18 @@ load_env_vars() {
     value="${value%$'\r'}"
     value="${value%\"}"
     value="${value#\"}"
-    case "$key" in
-      COMFY_WORKFLOWS_BIND)
-        export "$key=$value"
-        ;;
-    esac
-  done < <(grep -E '^(COMFY_WORKFLOWS_BIND)=' "$env_file" || true)
+    export "$key=$value"
+  done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" || true)
 }
 
 load_env_vars
 
-resolve_bind() {
-  local bind_path="$1"
-  if [[ "$bind_path" = /* ]]; then
-    printf "%s" "$bind_path"
+resolve_path() {
+  local path_value="$1"
+  if [[ "$path_value" = /* ]]; then
+    printf "%s" "$path_value"
   else
-    printf "%s/%s" "$ROOT_DIR" "${bind_path#./}"
+    printf "%s/%s" "$ROOT_DIR" "${path_value#./}"
   fi
 }
 
@@ -53,7 +49,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
   exit 0
 fi
 
-workflows_dir="$(resolve_bind "${COMFY_WORKFLOWS_BIND:-./data/workflows}")"
+workflows_dir="$(resolve_path "${COMFY_WORKFLOWS_DIR:-./data/workflows}")"
 editing_dir="$workflows_dir/editing"
 
 mkdir -p "$editing_dir"
@@ -69,6 +65,15 @@ else
 fi
 
 destination_path="$editing_dir/$(basename "$source_path")"
+
+source_abs="$(cd "$(dirname "$source_path")" && pwd)/$(basename "$source_path")"
+destination_abs="$(cd "$(dirname "$destination_path")" && pwd)/$(basename "$destination_path")"
+
+if [[ "$source_abs" == "$destination_abs" ]]; then
+  echo "[workflow-move-to-edit] workflow is already in editing: $destination_path"
+  exit 0
+fi
+
 mv "$source_path" "$destination_path"
 
 echo "[workflow-move-to-edit] moved to: $destination_path"

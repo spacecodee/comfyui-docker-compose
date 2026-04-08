@@ -4,14 +4,12 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-MODEL_DIRS_FILE="$ROOT_DIR/scripts/comfy-model-dirs.txt"
-
 load_env_vars() {
   local env_file=""
-  if [[ -f .env ]]; then
-    env_file=.env
-  elif [[ -f .env.example ]]; then
-    env_file=.env.example
+  if [[ -f "$ROOT_DIR/.env" ]]; then
+    env_file="$ROOT_DIR/.env"
+  elif [[ -f "$ROOT_DIR/.env.example" ]]; then
+    env_file="$ROOT_DIR/.env.example"
   fi
 
   if [[ -z "$env_file" ]]; then
@@ -22,59 +20,30 @@ load_env_vars() {
     value="${value%$'\r'}"
     value="${value%\"}"
     value="${value#\"}"
-    case "$key" in
-      COMFY_MODELS_BIND|COMFY_CUSTOM_NODES_BIND|COMFY_INPUT_BIND|COMFY_OUTPUT_BIND|COMFY_USER_BIND|COMFY_TEMP_BIND|COMFY_WORKFLOWS_BIND)
-        export "$key=$value"
-        ;;
-    esac
-  done < <(grep -E '^(COMFY_MODELS_BIND|COMFY_CUSTOM_NODES_BIND|COMFY_INPUT_BIND|COMFY_OUTPUT_BIND|COMFY_USER_BIND|COMFY_TEMP_BIND|COMFY_WORKFLOWS_BIND)=' "$env_file" || true)
+    export "$key=$value"
+  done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" || true)
 }
 
 load_env_vars
 
-resolve_bind() {
-  local bind_path="$1"
-  if [[ "$bind_path" = /* ]]; then
-    printf "%s" "$bind_path"
+resolve_path() {
+  local path_value="$1"
+  if [[ "$path_value" = /* ]]; then
+    printf "%s" "$path_value"
   else
-    printf "%s/%s" "$ROOT_DIR" "${bind_path#./}"
+    printf "%s/%s" "$ROOT_DIR" "${path_value#./}"
   fi
 }
 
-models_bind="$(resolve_bind "${COMFY_MODELS_BIND:-./data/models}")"
-custom_nodes_bind="$(resolve_bind "${COMFY_CUSTOM_NODES_BIND:-./data/custom_nodes}")"
-input_bind="$(resolve_bind "${COMFY_INPUT_BIND:-./data/input}")"
-output_bind="$(resolve_bind "${COMFY_OUTPUT_BIND:-./data/output}")"
-user_bind="$(resolve_bind "${COMFY_USER_BIND:-./data/user}")"
-temp_bind="$(resolve_bind "${COMFY_TEMP_BIND:-./data/temp}")"
-workflows_bind="$(resolve_bind "${COMFY_WORKFLOWS_BIND:-./data/workflows}")"
+workflows_dir="$(resolve_path "${COMFY_WORKFLOWS_DIR:-./data/workflows}")"
+editing_dir="$workflows_dir/editing"
+input_dir="$(resolve_path "${COMFY_INPUT_DIR:-./data/input}")"
+output_dir="$(resolve_path "${COMFY_OUTPUT_DIR:-./data/output}")"
 
-if [[ ! -f "$MODEL_DIRS_FILE" ]]; then
-  echo "[prepare-data-dirs] ERROR: missing $MODEL_DIRS_FILE" >&2
-  exit 1
-fi
-
-tracked_dirs=(
-  "$custom_nodes_bind"
-  "$input_bind"
-  "$output_bind"
-  "$user_bind"
-  "$temp_bind"
-)
-
-while IFS= read -r model_subdir; do
-  if [[ -z "$model_subdir" ]]; then
-    continue
-  fi
-  tracked_dirs+=("$models_bind/$model_subdir")
-done < "$MODEL_DIRS_FILE"
-
-for dir in "${tracked_dirs[@]}"; do
-  mkdir -p "$dir"
-  touch "$dir/.gitkeep"
-done
-
-mkdir -p "$workflows_bind/editing"
+mkdir -p "$workflows_dir" "$editing_dir" "$input_dir" "$output_dir"
+touch "$workflows_dir/.gitkeep" "$editing_dir/.gitkeep" "$input_dir/.gitkeep" "$output_dir/.gitkeep"
 
 echo "[prepare-data-dirs] ensured ComfyUI data folders"
-echo "[prepare-data-dirs] workflows dir: $workflows_bind"
+echo "[prepare-data-dirs] workflows dir: $workflows_dir"
+echo "[prepare-data-dirs] input dir: $input_dir"
+echo "[prepare-data-dirs] output dir: $output_dir"

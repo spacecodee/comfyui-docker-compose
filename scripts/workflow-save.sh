@@ -6,10 +6,10 @@ cd "$ROOT_DIR"
 
 load_env_vars() {
   local env_file=""
-  if [[ -f .env ]]; then
-    env_file=.env
-  elif [[ -f .env.example ]]; then
-    env_file=.env.example
+  if [[ -f "$ROOT_DIR/.env" ]]; then
+    env_file="$ROOT_DIR/.env"
+  elif [[ -f "$ROOT_DIR/.env.example" ]]; then
+    env_file="$ROOT_DIR/.env.example"
   fi
 
   if [[ -z "$env_file" ]]; then
@@ -20,22 +20,18 @@ load_env_vars() {
     value="${value%$'\r'}"
     value="${value%\"}"
     value="${value#\"}"
-    case "$key" in
-      COMFY_USER_BIND|COMFY_WORKFLOWS_BIND)
-        export "$key=$value"
-        ;;
-    esac
-  done < <(grep -E '^(COMFY_USER_BIND|COMFY_WORKFLOWS_BIND)=' "$env_file" || true)
+    export "$key=$value"
+  done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" || true)
 }
 
 load_env_vars
 
-resolve_bind() {
-  local bind_path="$1"
-  if [[ "$bind_path" = /* ]]; then
-    printf "%s" "$bind_path"
+resolve_path() {
+  local path_value="$1"
+  if [[ "$path_value" = /* ]]; then
+    printf "%s" "$path_value"
   else
-    printf "%s/%s" "$ROOT_DIR" "${bind_path#./}"
+    printf "%s/%s" "$ROOT_DIR" "${path_value#./}"
   fi
 }
 
@@ -44,7 +40,7 @@ usage() {
 Usage: ./scripts/workflow-save.sh [--editing] [--name output.json] [source.json]
 
 If source.json is omitted, the script copies the latest JSON from:
-  <COMFY_USER_BIND>/default/workflows
+  <COMFYUI_DIR>/user/default/workflows
 
 Options:
   --editing      Save directly into workflows/editing
@@ -86,9 +82,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-workflows_dir="$(resolve_bind "${COMFY_WORKFLOWS_BIND:-./data/workflows}")"
+workflows_dir="$(resolve_path "${COMFY_WORKFLOWS_DIR:-./data/workflows}")"
 editing_dir="$workflows_dir/editing"
-user_workflows_dir="$(resolve_bind "${COMFY_USER_BIND:-./data/user}")/default/workflows"
+comfy_dir="$(resolve_path "${COMFYUI_DIR:-./comfyui}")"
+
+if [[ -n "${COMFY_USER_WORKFLOWS_DIR:-}" ]]; then
+  user_workflows_dir="$(resolve_path "${COMFY_USER_WORKFLOWS_DIR}")"
+else
+  user_workflows_dir="$comfy_dir/user/default/workflows"
+fi
 
 mkdir -p "$workflows_dir" "$editing_dir"
 
@@ -118,6 +120,16 @@ if [[ -z "$output_name" ]]; then
   output_name="$(basename "$source_file")"
 fi
 
-cp "$source_file" "$target_dir/$output_name"
+target_path="$target_dir/$output_name"
 
-echo "[workflow-save] saved to: $target_dir/$output_name"
+source_abs="$(cd "$(dirname "$source_file")" && pwd)/$(basename "$source_file")"
+target_abs="$(cd "$(dirname "$target_path")" && pwd)/$(basename "$target_path")"
+
+if [[ "$source_abs" == "$target_abs" ]]; then
+  echo "[workflow-save] source and destination are the same file: $target_path"
+  exit 0
+fi
+
+cp "$source_file" "$target_path"
+
+echo "[workflow-save] saved to: $target_path"
