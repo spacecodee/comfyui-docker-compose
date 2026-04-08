@@ -14,6 +14,8 @@ When enabled in .env, preview decoder models are also downloaded.
 
 You can set COMFY_PYTHON_BIN in .env to choose a specific Python binary,
 for example: python3.13
+Set COMFY_USE_VENV=false in .env when running in environments that block
+virtualenv creation (for example managed Studio/conda setups).
 EOF
 }
 
@@ -114,6 +116,16 @@ fi
 load_env_vars
 
 python_cmd="${COMFY_PYTHON_BIN:-python3}"
+use_venv="${COMFY_USE_VENV:-true}"
+
+case "$use_venv" in
+  true|false)
+    ;;
+  *)
+    echo "[setup-local] COMFY_USE_VENV must be 'true' or 'false' (current: $use_venv)" >&2
+    exit 1
+    ;;
+esac
 
 if ! command -v "$python_cmd" >/dev/null 2>&1; then
   echo "$python_cmd is required but was not found in PATH" >&2
@@ -186,12 +198,39 @@ else
   exit 1
 fi
 
-if [[ ! -x "$venv_dir/bin/python" ]]; then
+if [[ "$use_venv" == "true" && ! -x "$venv_dir/bin/python" ]]; then
   echo "[setup-local] creating virtual environment in: $venv_dir"
-  "$python_cmd" -m venv "$venv_dir"
+  venv_error_log="$(mktemp)"
+  if ! "$python_cmd" -m venv "$venv_dir" 2>"$venv_error_log"; then
+    venv_error_output="$(cat "$venv_error_log")"
+    rm -f "$venv_error_log"
+
+    if [[ "$venv_error_output" == *"Venv creation is not allowed"* || "$venv_error_output" == *"default conda environment"* ]]; then
+      echo "[setup-local] virtualenv creation is blocked by this environment; using existing Python environment instead." >&2
+      echo "[setup-local] tip: set COMFY_USE_VENV=false in .env to skip venv creation attempts." >&2
+      use_venv=false
+    else
+      echo "[setup-local] failed to create virtual environment at: $venv_dir" >&2
+      if [[ -n "$venv_error_output" ]]; then
+        echo "$venv_error_output" >&2
+      fi
+      exit 1
+    fi
+  else
+    rm -f "$venv_error_log"
+  fi
 fi
 
-python_bin="$venv_dir/bin/python"
+if [[ "$use_venv" == "true" ]]; then
+  python_bin="$venv_dir/bin/python"
+  if [[ ! -x "$python_bin" ]]; then
+    echo "[setup-local] python not found in virtual environment: $python_bin" >&2
+    exit 1
+  fi
+else
+  python_bin="$(command -v "$python_cmd")"
+  echo "[setup-local] using existing Python environment: $python_bin"
+fi
 
 echo "[setup-local] installing Python dependencies"
 "$python_bin" -m pip install --upgrade pip setuptools wheel

@@ -128,6 +128,8 @@ venv_dir="$(resolve_path "${COMFY_VENV_DIR:-./.venv}")"
 workflows_dir="$(resolve_path "${COMFY_WORKFLOWS_DIR:-./data/workflows}")"
 input_dir="$(resolve_path "${COMFY_INPUT_DIR:-./data/input}")"
 output_dir="$(resolve_path "${COMFY_OUTPUT_DIR:-./data/output}")"
+python_cmd="${COMFY_PYTHON_BIN:-python3}"
+use_venv="${COMFY_USE_VENV:-true}"
 
 case "$action" in
   setup)
@@ -157,9 +159,29 @@ if [[ ! -f "$comfy_dir/main.py" ]]; then
   exit 1
 fi
 
-if [[ ! -x "$venv_dir/bin/python" ]]; then
-  echo "[run-comfyui] Python virtual environment not found in: $venv_dir" >&2
-  echo "[run-comfyui] run: ./scripts/run-comfyui.sh setup" >&2
+case "$use_venv" in
+  true|false)
+    ;;
+  *)
+    echo "[run-comfyui] COMFY_USE_VENV must be 'true' or 'false' (current: $use_venv)" >&2
+    exit 1
+    ;;
+esac
+
+if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
+  python_bin="$venv_dir/bin/python"
+elif command -v "$python_cmd" >/dev/null 2>&1; then
+  python_bin="$(command -v "$python_cmd")"
+  if [[ "$use_venv" == "true" ]]; then
+    echo "[run-comfyui] virtualenv not found in: $venv_dir" >&2
+    echo "[run-comfyui] falling back to existing Python environment: $python_bin" >&2
+    echo "[run-comfyui] tip: set COMFY_USE_VENV=false in .env for managed environments." >&2
+  fi
+else
+  echo "[run-comfyui] python command not found: $python_cmd" >&2
+  if [[ "$use_venv" == "true" ]]; then
+    echo "[run-comfyui] run: ./scripts/run-comfyui.sh setup" >&2
+  fi
   exit 1
 fi
 
@@ -198,4 +220,4 @@ echo "[run-comfyui] starting ComfyUI from: $comfy_dir"
 echo "[run-comfyui] args: ${args[*]}"
 
 cd "$comfy_dir"
-exec "$venv_dir/bin/python" main.py "${args[@]}"
+exec "$python_bin" main.py "${args[@]}"

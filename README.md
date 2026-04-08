@@ -61,6 +61,7 @@ Python:
 - Free-threaded Python works, but some dependencies re-enable the GIL, so it is not fully supported.
 - Python 3.13 is very well supported (recommended default).
 - If you hit custom node dependency problems on 3.13, try Python 3.12.
+- In managed environments that block virtualenv creation (for example some Studio/conda setups), set COMFY_USE_VENV=false.
 
 PyTorch:
 
@@ -68,7 +69,8 @@ PyTorch:
 - Some features and optimizations may work better only on newer versions.
 - Recommended: latest major PyTorch version with the latest CUDA version, unless that release is less than two weeks old.
 
-Tip: set COMFY_PYTHON_BIN in .env (for example python3.13) to control which Python version is used for venv creation.
+Tip: set COMFY_PYTHON_BIN in .env (for example python3.13) to control which Python version is used.
+Tip: if you get "Venv creation is not allowed", set COMFY_USE_VENV=false.
 
 ## Quick Start
 
@@ -161,7 +163,8 @@ Configure .env as needed:
 - COMFYUI_REPO_URL: ComfyUI repository URL (official repo by default).
 - COMFYUI_REF: branch/tag/commit to use.
 - COMFYUI_DIR: local ComfyUI directory (./comfyui).
-- COMFY_PYTHON_BIN: Python binary for venv creation (python3.13 recommended).
+- COMFY_USE_VENV: true/false toggle for creating and using .venv.
+- COMFY_PYTHON_BIN: Python binary used by setup/start/deps (python3.13 recommended).
 - COMFY_VENV_DIR: local virtual environment directory (./.venv).
 - COMFY_WORKFLOWS_DIR: versioned workflows directory (./data/workflows).
 - COMFY_INPUT_DIR: synced input directory (./data/input).

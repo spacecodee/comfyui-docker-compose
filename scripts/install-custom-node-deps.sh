@@ -55,6 +55,8 @@ fi
 
 comfy_dir="$(resolve_path "${COMFYUI_DIR:-./comfyui}")"
 venv_dir="$(resolve_path "${COMFY_VENV_DIR:-./.venv}")"
+python_cmd="${COMFY_PYTHON_BIN:-python3}"
+use_venv="${COMFY_USE_VENV:-true}"
 
 if [[ -n "${COMFY_CUSTOM_NODES_DIR:-}" ]]; then
     custom_nodes_dir="$(resolve_path "${COMFY_CUSTOM_NODES_DIR}")"
@@ -70,10 +72,26 @@ fi
 
 strict_mode="${COMFY_CUSTOM_NODE_DEPS_STRICT:-false}"
 force_mode="${COMFY_CUSTOM_NODE_DEPS_FORCE:-false}"
-python_bin="$venv_dir/bin/python"
 
-if [[ ! -x "$python_bin" ]]; then
-    echo "[custom-node-deps] python not found in virtual environment: $python_bin" >&2
+case "$use_venv" in
+    true|false)
+        ;;
+    *)
+        echo "[custom-node-deps] COMFY_USE_VENV must be 'true' or 'false' (current: $use_venv)" >&2
+        exit 1
+        ;;
+esac
+
+if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
+    python_bin="$venv_dir/bin/python"
+elif command -v "$python_cmd" >/dev/null 2>&1; then
+    python_bin="$(command -v "$python_cmd")"
+    if [[ "$use_venv" == "true" ]]; then
+        echo "[custom-node-deps] virtualenv not found in: $venv_dir" >&2
+        echo "[custom-node-deps] falling back to existing Python environment: $python_bin" >&2
+    fi
+else
+    echo "[custom-node-deps] python command not found: $python_cmd" >&2
     exit 1
 fi
 
