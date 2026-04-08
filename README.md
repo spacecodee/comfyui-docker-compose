@@ -136,13 +136,27 @@ On start, the runner can automatically:
 
 - sync ComfyUI core requirements when requirements.txt changes
 - install manager requirements when --enable-manager is active
+- install matrix-nio when --enable-manager is active (to avoid matrix sharing warning)
+- repair requests stack when RequestsDependencyWarning is detected
+- optionally upgrade torch/torchvision/torchaudio to cu130 wheels when torch cuda < 13
 - repair torchaudio when it is incompatible with the installed torch build
 
 This behavior is controlled by:
 
 - COMFY_AUTO_SYNC_REQUIREMENTS
 - COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS
+- COMFY_AUTO_INSTALL_MATRIX_NIO
+- COMFY_AUTO_FIX_REQUESTS_STACK
+- COMFY_AUTO_FIX_TORCH_CUDA130
+- COMFY_AUTO_FIX_TORCH_CUDA130_FORCE
 - COMFY_AUTO_FIX_TORCHAUDIO
+
+If you still see this warning:
+
+- WARNING: You need pytorch with cu130 or higher to use optimized CUDA operations.
+
+COMFY_AUTO_FIX_TORCH_CUDA130 is enabled by default. If needed, keep it true and run start once.
+Set it to false only if you explicitly want to skip torch/cu130 auto-upgrade.
 
 ## Model Downloads (Hugging Face / CivitAI)
 
@@ -195,6 +209,10 @@ Configure .env as needed:
 - COMFY_CUSTOM_NODE_DEPS_FORCE: reinstall dependencies even when unchanged.
 - COMFY_AUTO_SYNC_REQUIREMENTS: auto-install core requirements when requirements.txt changes.
 - COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS: auto-install manager requirements when --enable-manager is used.
+- COMFY_AUTO_INSTALL_MATRIX_NIO: install matrix-nio automatically for ComfyUI-Manager matrix sharing.
+- COMFY_AUTO_FIX_REQUESTS_STACK: repair requests/urllib3/chardet/charset-normalizer mismatch warning.
+- COMFY_AUTO_FIX_TORCH_CUDA130: attempt torch/torchvision/torchaudio upgrade to cu130 when needed.
+- COMFY_AUTO_FIX_TORCH_CUDA130_FORCE: re-attempt cu130 upgrade even after a previous failed attempt.
 - COMFY_AUTO_FIX_TORCHAUDIO: attempt torchaudio repair when torch/torchaudio are mismatched.
 - HF_TOKEN: optional Hugging Face token used by model-download.sh.
 - CIVITAI_TOKEN: optional CivitAI token used by model-download.sh.

@@ -137,9 +137,11 @@ load_env_vars
 python_cmd="${COMFY_PYTHON_BIN:-python3}"
 use_venv="${COMFY_USE_VENV:-true}"
 auto_install_manager_requirements="${COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS:-true}"
+auto_install_matrix_nio="${COMFY_AUTO_INSTALL_MATRIX_NIO:-true}"
 
 validate_bool_setting "COMFY_USE_VENV" "$use_venv"
 validate_bool_setting "COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS" "$auto_install_manager_requirements"
+validate_bool_setting "COMFY_AUTO_INSTALL_MATRIX_NIO" "$auto_install_matrix_nio"
 
 if ! command -v "$python_cmd" >/dev/null 2>&1; then
   echo "$python_cmd is required but was not found in PATH" >&2
@@ -253,6 +255,18 @@ echo "[setup-local] installing Python dependencies"
 if manager_enabled_from_env && [[ "$auto_install_manager_requirements" == "true" ]] && [[ -f "$comfy_dir/manager_requirements.txt" ]]; then
   echo "[setup-local] installing ComfyUI manager requirements"
   "$python_bin" -m pip install -r "$comfy_dir/manager_requirements.txt"
+fi
+
+if manager_enabled_from_env && [[ "$auto_install_matrix_nio" == "true" ]]; then
+  if ! "$python_bin" - <<'PY' >/dev/null 2>&1
+import nio  # noqa: F401
+PY
+  then
+    echo "[setup-local] installing matrix-nio for ComfyUI-Manager matrix sharing"
+    if ! "$python_bin" -m pip install matrix-nio; then
+      echo "[setup-local] warning: failed to install matrix-nio; matrix sharing will stay disabled" >&2
+    fi
+  fi
 fi
 
 if [[ "${COMFY_PREVIEW_AUTO_SETUP:-true}" == "true" ]]; then

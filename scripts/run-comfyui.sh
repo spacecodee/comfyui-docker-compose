@@ -268,6 +268,166 @@ PY
   fi
 }
 
+repair_requests_stack_if_needed() {
+  local enabled="$1"
+
+  if [[ "$enabled" != "true" ]]; then
+    return 0
+  fi
+
+  local check_output
+  local check_status
+
+  set +e
+  check_output="$("$python_bin" - <<'PY'
+import warnings
+
+with warnings.catch_warnings(record=True) as captured:
+    warnings.simplefilter("always")
+    import requests  # noqa: F401
+
+dep_warnings = [w for w in captured if w.category.__name__ == "RequestsDependencyWarning"]
+if dep_warnings:
+    print("REQUESTS_WARNING=1")
+    print(f"REQUESTS_WARNING_MSG={dep_warnings[0].message}")
+    raise SystemExit(1)
+
+print("REQUESTS_WARNING=0")
+PY
+)"
+  check_status=$?
+  set -e
+
+  if [[ "$check_status" -eq 0 ]]; then
+    return 0
+  fi
+
+  local warning_msg
+  warning_msg="$(printf '%s\n' "$check_output" | grep '^REQUESTS_WARNING_MSG=' | head -n 1 | cut -d'=' -f2- || true)"
+  echo "[run-comfyui] requests dependency warning detected: ${warning_msg:-unknown}" >&2
+  echo "[run-comfyui] attempting requests stack repair"
+
+  if ! "$python_bin" -m pip install --upgrade --force-reinstall \
+    "requests>=2.32.3,<3" \
+    "urllib3>=2,<3" \
+    "charset_normalizer>=3,<4" \
+    "chardet<6"; then
+    echo "[run-comfyui] warning: requests stack repair failed" >&2
+    return 0
+  fi
+
+  set +e
+  "$python_bin" - <<'PY'
+import warnings
+
+with warnings.catch_warnings(record=True) as captured:
+    warnings.simplefilter("always")
+    import requests  # noqa: F401
+
+dep_warnings = [w for w in captured if w.category.__name__ == "RequestsDependencyWarning"]
+if dep_warnings:
+    raise SystemExit(1)
+
+print("[run-comfyui] requests dependency warning resolved")
+PY
+  check_status=$?
+  set -e
+
+  if [[ "$check_status" -ne 0 ]]; then
+    echo "[run-comfyui] warning: requests warning still present after repair" >&2
+  fi
+}
+
+ensure_matrix_nio_if_needed() {
+  local enabled="$1"
+
+  if [[ "$enabled" != "true" ]]; then
+    return 0
+  fi
+
+  if "$python_bin" - <<'PY' >/dev/null 2>&1
+import nio  # noqa: F401
+PY
+  then
+    return 0
+  fi
+
+  echo "[run-comfyui] matrix-nio missing; installing to enable ComfyUI-Manager matrix sharing"
+  if ! "$python_bin" -m pip install matrix-nio; then
+    echo "[run-comfyui] warning: failed to install matrix-nio; matrix sharing will stay disabled" >&2
+  fi
+}
+
+upgrade_torch_cuda130_if_needed() {
+  local enabled="$1"
+  local force="$2"
+
+  if [[ "$enabled" != "true" ]]; then
+    return 0
+  fi
+
+  local check_output
+  local check_status
+
+  set +e
+  check_output="$("$python_bin" - <<'PY'
+import torch
+
+print(f"TORCH_VERSION={torch.__version__}")
+print(f"TORCH_CUDA={torch.version.cuda or ''}")
+print(f"CUDA_AVAILABLE={int(torch.cuda.is_available())}")
+PY
+)"
+  check_status=$?
+  set -e
+
+  if [[ "$check_status" -ne 0 ]]; then
+    echo "[run-comfyui] warning: failed to inspect torch/cuda version for cu130 auto-fix" >&2
+    return 0
+  fi
+
+  local torch_version
+  local torch_cuda
+  local cuda_available
+  local cuda_major
+  local state_file
+  local previous_attempt
+
+  torch_version="$(printf '%s\n' "$check_output" | grep '^TORCH_VERSION=' | head -n 1 | cut -d'=' -f2- || true)"
+  torch_cuda="$(printf '%s\n' "$check_output" | grep '^TORCH_CUDA=' | head -n 1 | cut -d'=' -f2- || true)"
+  cuda_available="$(printf '%s\n' "$check_output" | grep '^CUDA_AVAILABLE=' | head -n 1 | cut -d'=' -f2- || true)"
+
+  if [[ "$cuda_available" != "1" || -z "$torch_cuda" ]]; then
+    return 0
+  fi
+
+  cuda_major="${torch_cuda%%.*}"
+  if [[ "$cuda_major" =~ ^[0-9]+$ ]] && (( cuda_major >= 13 )); then
+    return 0
+  fi
+
+  state_file="$comfy_dir/user/.cache/torch-cu130-upgrade.attempt"
+  previous_attempt=""
+  if [[ -f "$state_file" ]]; then
+    previous_attempt="$(tr -d '\r\n' < "$state_file" || true)"
+  fi
+
+  if [[ "$force" != "true" && -n "$previous_attempt" && "$previous_attempt" == "$torch_version" ]]; then
+    echo "[run-comfyui] torch cu130 auto-upgrade already attempted for torch=$torch_version; skipping repeat" >&2
+    return 0
+  fi
+
+  echo "[run-comfyui] torch uses CUDA $torch_cuda; attempting upgrade to cu130 wheels"
+  if ! "$python_bin" -m pip install --upgrade --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130; then
+    mkdir -p "$(dirname "$state_file")"
+    printf "%s\n" "$torch_version" > "$state_file"
+    echo "[run-comfyui] warning: torch cu130 auto-upgrade failed; optimized CUDA warning may remain" >&2
+    return 0
+  fi
+
+  rm -f "$state_file"
+}
+
 action="start"
 if [[ $# -gt 0 ]]; then
   case "$1" in
@@ -300,6 +460,10 @@ use_venv="${COMFY_USE_VENV:-true}"
 auto_sync_requirements="${COMFY_AUTO_SYNC_REQUIREMENTS:-true}"
 auto_install_manager_requirements="${COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS:-true}"
 auto_fix_torchaudio="${COMFY_AUTO_FIX_TORCHAUDIO:-true}"
+auto_fix_requests_stack="${COMFY_AUTO_FIX_REQUESTS_STACK:-true}"
+auto_install_matrix_nio="${COMFY_AUTO_INSTALL_MATRIX_NIO:-true}"
+auto_fix_torch_cuda130="${COMFY_AUTO_FIX_TORCH_CUDA130:-true}"
+auto_fix_torch_cuda130_force="${COMFY_AUTO_FIX_TORCH_CUDA130_FORCE:-false}"
 cli_extra_args=("$@")
 
 case "$action" in
@@ -334,6 +498,10 @@ validate_bool_setting "COMFY_USE_VENV" "$use_venv"
 validate_bool_setting "COMFY_AUTO_SYNC_REQUIREMENTS" "$auto_sync_requirements"
 validate_bool_setting "COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS" "$auto_install_manager_requirements"
 validate_bool_setting "COMFY_AUTO_FIX_TORCHAUDIO" "$auto_fix_torchaudio"
+validate_bool_setting "COMFY_AUTO_FIX_REQUESTS_STACK" "$auto_fix_requests_stack"
+validate_bool_setting "COMFY_AUTO_INSTALL_MATRIX_NIO" "$auto_install_matrix_nio"
+validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130" "$auto_fix_torch_cuda130"
+validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130_FORCE" "$auto_fix_torch_cuda130_force"
 
 if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
   python_bin="$venv_dir/bin/python"
@@ -364,8 +532,12 @@ if manager_enabled_for_start "${cli_extra_args[@]}"; then
     "$comfy_dir/user/.cache/comfy-manager-requirements.sha256" \
     "ComfyUI manager requirements" \
     "$auto_install_manager_requirements"
+
+  ensure_matrix_nio_if_needed "$auto_install_matrix_nio"
 fi
 
+repair_requests_stack_if_needed "$auto_fix_requests_stack"
+upgrade_torch_cuda130_if_needed "$auto_fix_torch_cuda130" "$auto_fix_torch_cuda130_force"
 repair_torchaudio_if_needed "$auto_fix_torchaudio"
 
 ./scripts/prepare-data-dirs.sh
