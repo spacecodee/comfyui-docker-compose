@@ -98,6 +98,9 @@ cp .env.example .env
 http://127.0.0.1:8188
 ```
 
+For remote environments (Cloudspaces/Studio/Codespaces), use the forwarded/public URL for port 8188.
+If you get HTTP 403, it is usually platform authorization/port-sharing policy, not a ComfyUI crash.
+
 ## Workflows, Input, and Output Linking
 
 During setup and start, these links are created:
@@ -202,6 +205,7 @@ Configure .env as needed:
 - COMFY_MODELS_DIR: optional models root override (defaults to <COMFYUI_DIR>/models).
 - COMFYUI_HOST: web host binding.
 - COMFYUI_PORT: web port.
+- COMFY_AUTO_PUBLIC_BIND: auto-switch localhost host values to 0.0.0.0 in remote workspaces.
 - COMFYUI_PREVIEW_METHOD: auto, taesd, latent2rgb, or none.
 - COMFYUI_EXTRA_ARGS: extra arguments passed to main.py.
 - COMFY_PREVIEW_AUTO_SETUP: download preview decoders during local setup.
@@ -221,6 +225,16 @@ Configure .env as needed:
 - CIVITAI_TOKEN: optional CivitAI token used by model-download.sh.
 
 Default branch in this repo config is COMFYUI_REF=master.
+
+## Remote Access Notes (403 Forbidden)
+
+If your browser shows HTTP 403 on a forwarded URL, check:
+
+- COMFYUI is listening on 0.0.0.0 (set COMFYUI_HOST=0.0.0.0).
+- Port 8188 is shared/forwarded in your platform panel.
+- Your browser session is authorized for that workspace URL.
+
+This repo sets COMFYUI_HOST=0.0.0.0 and COMFY_AUTO_PUBLIC_BIND=true by default for remote compatibility.
 
 ## Preview Method (Automatic and Manual Download)
 

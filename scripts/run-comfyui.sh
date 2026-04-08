@@ -115,6 +115,47 @@ validate_bool_setting() {
   esac
 }
 
+is_remote_workspace() {
+  if [[ -n "${CLOUDENV_ENVIRONMENT_ID:-}" ]]; then
+    return 0
+  fi
+
+  if [[ -n "${CLOUDSPACE_HOST:-}" || -n "${TEAMSPACE_HOST:-}" || -n "${LITNG_ENVIRONMENT_ID:-}" ]]; then
+    return 0
+  fi
+
+  if [[ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" || -n "${CODESPACES:-}" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+resolve_bind_host() {
+  local configured_host="${COMFYUI_HOST:-}"
+
+  if [[ -z "$configured_host" ]]; then
+    if [[ "$auto_public_bind" == "true" ]] && is_remote_workspace; then
+      printf "0.0.0.0"
+    else
+      printf "127.0.0.1"
+    fi
+    return
+  fi
+
+  case "$configured_host" in
+    127.0.0.1|localhost)
+      if [[ "$auto_public_bind" == "true" ]] && is_remote_workspace; then
+        echo "[run-comfyui] remote workspace detected; overriding COMFYUI_HOST=$configured_host to 0.0.0.0 for port forwarding"
+        printf "0.0.0.0"
+        return
+      fi
+      ;;
+  esac
+
+  printf "%s" "$configured_host"
+}
+
 file_sha256() {
   sha256sum "$1" | awk '{print $1}'
 }
@@ -552,6 +593,7 @@ auto_install_matrix_nio="${COMFY_AUTO_INSTALL_MATRIX_NIO:-true}"
 auto_fix_torch_cuda130="${COMFY_AUTO_FIX_TORCH_CUDA130:-true}"
 auto_fix_torch_cuda130_force="${COMFY_AUTO_FIX_TORCH_CUDA130_FORCE:-false}"
 auto_fix_numpy_scipy_compat="${COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT:-true}"
+auto_public_bind="${COMFY_AUTO_PUBLIC_BIND:-true}"
 cli_extra_args=("$@")
 
 case "$action" in
@@ -591,6 +633,7 @@ validate_bool_setting "COMFY_AUTO_INSTALL_MATRIX_NIO" "$auto_install_matrix_nio"
 validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130" "$auto_fix_torch_cuda130"
 validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130_FORCE" "$auto_fix_torch_cuda130_force"
 validate_bool_setting "COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT" "$auto_fix_numpy_scipy_compat"
+validate_bool_setting "COMFY_AUTO_PUBLIC_BIND" "$auto_public_bind"
 
 if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
   python_bin="$venv_dir/bin/python"
@@ -639,7 +682,7 @@ else
   echo "[run-comfyui] skipping custom node dependency auto-install"
 fi
 
-host="${COMFYUI_HOST:-127.0.0.1}"
+host="$(resolve_bind_host)"
 port="${COMFYUI_PORT:-8188}"
 args=(--listen "$host" --port "$port")
 
@@ -663,6 +706,10 @@ fi
 
 echo "[run-comfyui] starting ComfyUI from: $comfy_dir"
 echo "[run-comfyui] args: ${args[*]}"
+
+if is_remote_workspace; then
+  echo "[run-comfyui] running in remote workspace; if external URL returns 403, ensure port $port is shared/authorized in your platform UI" >&2
+fi
 
 cd "$comfy_dir"
 exec "$python_bin" main.py "${args[@]}"
