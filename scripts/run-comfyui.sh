@@ -76,6 +76,26 @@ ensure_runtime_links() {
   ensure_symlink "$output_dir" "$comfy_dir/output" "output"
 }
 
+ensure_frontend_userdata_defaults() {
+  local comfy_dir="$1"
+  local enabled="$2"
+
+  if [[ "$enabled" != "true" ]]; then
+    return 0
+  fi
+
+  local user_default_dir="$comfy_dir/user/default"
+  local subgraphs_dir="$user_default_dir/subgraphs"
+  local templates_file="$user_default_dir/comfy.templates.json"
+
+  mkdir -p "$subgraphs_dir"
+
+  if [[ ! -f "$templates_file" ]]; then
+    printf "{}\n" > "$templates_file"
+    echo "[run-comfyui] initialized frontend userdata file: $templates_file"
+  fi
+}
+
 resolve_preview_method() {
   if [[ -n "${COMFYUI_PREVIEW_METHOD:-}" ]]; then
     printf "%s" "${COMFYUI_PREVIEW_METHOD}"
@@ -626,6 +646,7 @@ auto_fix_torch_cuda130_force="${COMFY_AUTO_FIX_TORCH_CUDA130_FORCE:-false}"
 auto_fix_numpy_scipy_compat="${COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT:-true}"
 auto_public_bind="${COMFY_AUTO_PUBLIC_BIND:-true}"
 auto_enable_cors_on_remote="${COMFY_AUTO_ENABLE_CORS_ON_REMOTE:-true}"
+auto_init_userdata_defaults="${COMFY_AUTO_INIT_USERDATA_DEFAULTS:-true}"
 cors_origin="${COMFYUI_CORS_ORIGIN:-*}"
 cli_extra_args=("$@")
 
@@ -668,6 +689,7 @@ validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130_FORCE" "$auto_fix_torch_cuda
 validate_bool_setting "COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT" "$auto_fix_numpy_scipy_compat"
 validate_bool_setting "COMFY_AUTO_PUBLIC_BIND" "$auto_public_bind"
 validate_bool_setting "COMFY_AUTO_ENABLE_CORS_ON_REMOTE" "$auto_enable_cors_on_remote"
+validate_bool_setting "COMFY_AUTO_INIT_USERDATA_DEFAULTS" "$auto_init_userdata_defaults"
 
 if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
   python_bin="$venv_dir/bin/python"
@@ -709,6 +731,7 @@ repair_torchaudio_if_needed "$auto_fix_torchaudio"
 
 ./scripts/prepare-data-dirs.sh
 ensure_runtime_links "$comfy_dir" "$workflows_dir" "$input_dir" "$output_dir"
+ensure_frontend_userdata_defaults "$comfy_dir" "$auto_init_userdata_defaults"
 
 if [[ "${COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS:-true}" == "true" ]]; then
   ./scripts/install-custom-node-deps.sh

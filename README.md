@@ -208,6 +208,7 @@ Configure .env as needed:
 - COMFY_AUTO_PUBLIC_BIND: auto-switch localhost host values to 0.0.0.0 in remote workspaces.
 - COMFY_AUTO_ENABLE_CORS_ON_REMOTE: auto-add --enable-cors-header in remote workspaces (or when binding to non-loopback hosts like 0.0.0.0).
 - COMFYUI_CORS_ORIGIN: origin value passed to --enable-cors-header (default *).
+- COMFY_AUTO_INIT_USERDATA_DEFAULTS: create frontend expected userdata defaults (subgraphs and comfy.templates.json).
 - COMFYUI_PREVIEW_METHOD: auto, taesd, latent2rgb, or none.
 - COMFYUI_EXTRA_ARGS: extra arguments passed to main.py.
 - COMFY_PREVIEW_AUTO_SETUP: download preview decoders during local setup.
