@@ -14,8 +14,8 @@ Everything else (models, custom nodes, etc.) lives directly in ./comfyui.
 
 ## What is included now
 
-- scripts/setup-local.sh: clones/updates ComfyUI into ./comfyui, creates ./.venv, installs dependencies, and links workflows/input/output.
-- scripts/run-comfyui.sh: commands for setup, local start, custom node deps, and preview setup.
+- scripts/setup-local.sh: clones/updates ComfyUI into ./comfyui, prepares Python dependencies (venv or existing env), and links workflows/input/output.
+- scripts/run-comfyui.sh: commands for setup, local start, custom node deps, preview setup, and model downloads.
 - scripts/install-custom-node-deps.sh: installs custom node dependencies from requirements*.txt or pyproject.toml.
 - scripts/prepare-data-dirs.sh: ensures data/workflows, data/workflows/editing, data/input, and data/output.
 - scripts/setup-preview-method.sh: downloads TAESD decoders for --preview-method (automatic or manual).
@@ -130,6 +130,20 @@ Dependencies can be installed with:
 
 And during start they are installed automatically if COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS=true.
 
+## Dependency Auto-Sync and Repair
+
+On start, the runner can automatically:
+
+- sync ComfyUI core requirements when requirements.txt changes
+- install manager requirements when --enable-manager is active
+- repair torchaudio when it is incompatible with the installed torch build
+
+This behavior is controlled by:
+
+- COMFY_AUTO_SYNC_REQUIREMENTS
+- COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS
+- COMFY_AUTO_FIX_TORCHAUDIO
+
 ## Model Downloads (Hugging Face / CivitAI)
 
 You can download models directly into ComfyUI model directories (checkpoints, loras, vae, etc.):
@@ -179,6 +193,9 @@ Configure .env as needed:
 - COMFY_AUTO_INSTALL_CUSTOM_NODE_DEPS: install custom node dependencies on start.
 - COMFY_CUSTOM_NODE_DEPS_STRICT: fail if any dependency install fails.
 - COMFY_CUSTOM_NODE_DEPS_FORCE: reinstall dependencies even when unchanged.
+- COMFY_AUTO_SYNC_REQUIREMENTS: auto-install core requirements when requirements.txt changes.
+- COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS: auto-install manager requirements when --enable-manager is used.
+- COMFY_AUTO_FIX_TORCHAUDIO: attempt torchaudio repair when torch/torchaudio are mismatched.
 - HF_TOKEN: optional Hugging Face token used by model-download.sh.
 - CIVITAI_TOKEN: optional CivitAI token used by model-download.sh.
 

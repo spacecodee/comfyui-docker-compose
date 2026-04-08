@@ -9,7 +9,7 @@ usage() {
 Usage: ./scripts/setup-local.sh [--ref <ref>] [--repo <url>]
 
 Clones/updates ComfyUI inside this repository and installs Python
-dependencies into the local virtual environment.
+dependencies in the selected Python environment.
 When enabled in .env, preview decoder models are also downloaded.
 
 You can set COMFY_PYTHON_BIN in .env to choose a specific Python binary,
@@ -75,6 +75,25 @@ ensure_runtime_links() {
   ensure_symlink "$output_dir" "$comfy_dir/output" "output"
 }
 
+validate_bool_setting() {
+  local var_name="$1"
+  local var_value="$2"
+
+  case "$var_value" in
+    true|false)
+      ;;
+    *)
+      echo "[setup-local] $var_name must be 'true' or 'false' (current: $var_value)" >&2
+      exit 1
+      ;;
+  esac
+}
+
+manager_enabled_from_env() {
+  local extra="${COMFYUI_EXTRA_ARGS:-}"
+  [[ "$extra" =~ (^|[[:space:]])--enable-manager([=[:space:]]|$) ]]
+}
+
 override_ref=""
 override_repo=""
 
@@ -117,15 +136,10 @@ load_env_vars
 
 python_cmd="${COMFY_PYTHON_BIN:-python3}"
 use_venv="${COMFY_USE_VENV:-true}"
+auto_install_manager_requirements="${COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS:-true}"
 
-case "$use_venv" in
-  true|false)
-    ;;
-  *)
-    echo "[setup-local] COMFY_USE_VENV must be 'true' or 'false' (current: $use_venv)" >&2
-    exit 1
-    ;;
-esac
+validate_bool_setting "COMFY_USE_VENV" "$use_venv"
+validate_bool_setting "COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS" "$auto_install_manager_requirements"
 
 if ! command -v "$python_cmd" >/dev/null 2>&1; then
   echo "$python_cmd is required but was not found in PATH" >&2
@@ -235,6 +249,11 @@ fi
 echo "[setup-local] installing Python dependencies"
 "$python_bin" -m pip install --upgrade pip setuptools wheel
 "$python_bin" -m pip install -r "$comfy_dir/requirements.txt"
+
+if manager_enabled_from_env && [[ "$auto_install_manager_requirements" == "true" ]] && [[ -f "$comfy_dir/manager_requirements.txt" ]]; then
+  echo "[setup-local] installing ComfyUI manager requirements"
+  "$python_bin" -m pip install -r "$comfy_dir/manager_requirements.txt"
+fi
 
 if [[ "${COMFY_PREVIEW_AUTO_SETUP:-true}" == "true" ]]; then
   if ! ./scripts/setup-preview-method.sh; then
