@@ -128,7 +128,24 @@ is_remote_workspace() {
     return 0
   fi
 
+  if [[ "$ROOT_DIR" == /teamspace/* || "$PWD" == /teamspace/* ]]; then
+    return 0
+  fi
+
   return 1
+}
+
+is_loopback_host() {
+  local host_value="$1"
+
+  case "$host_value" in
+    ""|127.0.0.1|localhost|::1)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
 }
 
 resolve_bind_host() {
@@ -703,9 +720,11 @@ host="$(resolve_bind_host)"
 port="${COMFYUI_PORT:-8188}"
 args=(--listen "$host" --port "$port")
 
-if [[ "$auto_enable_cors_on_remote" == "true" ]] && is_remote_workspace && ! cors_enabled_for_start "${cli_extra_args[@]}"; then
-  echo "[run-comfyui] remote workspace detected; enabling CORS header for origin: $cors_origin"
-  args+=(--enable-cors-header "$cors_origin")
+if [[ "$auto_enable_cors_on_remote" == "true" ]] && ! cors_enabled_for_start "${cli_extra_args[@]}"; then
+  if is_remote_workspace || ! is_loopback_host "$host"; then
+    echo "[run-comfyui] enabling CORS header for origin: $cors_origin"
+    args+=(--enable-cors-header "$cors_origin")
+  fi
 fi
 
 preview_method="$(resolve_preview_method)"

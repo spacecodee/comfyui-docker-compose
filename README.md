@@ -206,7 +206,7 @@ Configure .env as needed:
 - COMFYUI_HOST: web host binding.
 - COMFYUI_PORT: web port.
 - COMFY_AUTO_PUBLIC_BIND: auto-switch localhost host values to 0.0.0.0 in remote workspaces.
-- COMFY_AUTO_ENABLE_CORS_ON_REMOTE: auto-add --enable-cors-header in remote workspaces.
+- COMFY_AUTO_ENABLE_CORS_ON_REMOTE: auto-add --enable-cors-header in remote workspaces (or when binding to non-loopback hosts like 0.0.0.0).
 - COMFYUI_CORS_ORIGIN: origin value passed to --enable-cors-header (default *).
 - COMFYUI_PREVIEW_METHOD: auto, taesd, latent2rgb, or none.
 - COMFYUI_EXTRA_ARGS: extra arguments passed to main.py.
