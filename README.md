@@ -138,6 +138,7 @@ On start, the runner can automatically:
 - install manager requirements when --enable-manager is active
 - install matrix-nio when --enable-manager is active (to avoid matrix sharing warning)
 - repair requests stack when RequestsDependencyWarning is detected
+- repair NumPy/SciPy ABI mismatches (for example NumPy 2.x with SciPy built for NumPy 1.x)
 - optionally upgrade torch/torchvision/torchaudio to cu130 wheels when torch cuda < 13
 - repair torchaudio when it is incompatible with the installed torch build
 
@@ -147,6 +148,7 @@ This behavior is controlled by:
 - COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS
 - COMFY_AUTO_INSTALL_MATRIX_NIO
 - COMFY_AUTO_FIX_REQUESTS_STACK
+- COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT
 - COMFY_AUTO_FIX_TORCH_CUDA130
 - COMFY_AUTO_FIX_TORCH_CUDA130_FORCE
 - COMFY_AUTO_FIX_TORCHAUDIO
@@ -210,7 +212,8 @@ Configure .env as needed:
 - COMFY_AUTO_SYNC_REQUIREMENTS: auto-install core requirements when requirements.txt changes.
 - COMFY_AUTO_INSTALL_MANAGER_REQUIREMENTS: auto-install manager requirements when --enable-manager is used.
 - COMFY_AUTO_INSTALL_MATRIX_NIO: install matrix-nio automatically for ComfyUI-Manager matrix sharing.
-- COMFY_AUTO_FIX_REQUESTS_STACK: repair requests/urllib3/chardet/charset-normalizer mismatch warning.
+- COMFY_AUTO_FIX_REQUESTS_STACK: repair requests/urllib3/chardet/charset-normalizer mismatch warning (caps urllib3 at <=2.5.0 for lightning-sdk compatibility).
+- COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT: repair NumPy/SciPy incompatibility and pin NumPy to <2 when needed.
 - COMFY_AUTO_FIX_TORCH_CUDA130: attempt torch/torchvision/torchaudio upgrade to cu130 when needed.
 - COMFY_AUTO_FIX_TORCH_CUDA130_FORCE: re-attempt cu130 upgrade even after a previous failed attempt.
 - COMFY_AUTO_FIX_TORCHAUDIO: attempt torchaudio repair when torch/torchaudio are mismatched.

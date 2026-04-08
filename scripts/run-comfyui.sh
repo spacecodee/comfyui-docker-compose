@@ -309,7 +309,7 @@ PY
 
   if ! "$python_bin" -m pip install --upgrade --force-reinstall \
     "requests>=2.32.3,<3" \
-    "urllib3>=2,<3" \
+    "urllib3>=2,<=2.5.0" \
     "charset_normalizer>=3,<4" \
     "chardet<6"; then
     echo "[run-comfyui] warning: requests stack repair failed" >&2
@@ -335,6 +335,93 @@ PY
 
   if [[ "$check_status" -ne 0 ]]; then
     echo "[run-comfyui] warning: requests warning still present after repair" >&2
+  fi
+}
+
+repair_numpy_scipy_compat_if_needed() {
+  local enabled="$1"
+
+  if [[ "$enabled" != "true" ]]; then
+    return 0
+  fi
+
+  local check_output
+  local check_status
+
+  set +e
+  check_output="$("$python_bin" - <<'PY'
+import importlib
+
+try:
+    import numpy as np
+    print(f"NUMPY_VERSION={np.__version__}")
+except Exception as exc:
+    print(f"NUMPY_IMPORT_ERROR={exc}")
+    raise SystemExit(2)
+
+scipy_error = ""
+try:
+    import scipy.ndimage  # noqa: F401
+except Exception as exc:
+    scipy_error = str(exc)
+
+if scipy_error:
+    print("SCIPY_OK=0")
+    print(f"SCIPY_ERROR={scipy_error}")
+    raise SystemExit(1)
+
+print("SCIPY_OK=1")
+PY
+)"
+  check_status=$?
+  set -e
+
+  local numpy_version
+  local numpy_major
+  local scipy_error
+
+  numpy_version="$(printf '%s\n' "$check_output" | grep '^NUMPY_VERSION=' | head -n 1 | cut -d'=' -f2- || true)"
+  scipy_error="$(printf '%s\n' "$check_output" | grep '^SCIPY_ERROR=' | head -n 1 | cut -d'=' -f2- || true)"
+  numpy_major="${numpy_version%%.*}"
+
+  local should_fix=false
+
+  if [[ "$check_status" -eq 2 ]]; then
+    should_fix=true
+  elif [[ "$numpy_major" =~ ^[0-9]+$ ]] && (( numpy_major >= 2 )); then
+    should_fix=true
+  elif [[ "$check_status" -ne 0 ]]; then
+    if [[ "$scipy_error" == *"numpy.core.multiarray failed to import"* || "$scipy_error" == *"compiled using NumPy 1.x"* ]]; then
+      should_fix=true
+    fi
+  fi
+
+  if [[ "$should_fix" != "true" ]]; then
+    return 0
+  fi
+
+  echo "[run-comfyui] numpy/scipy compatibility issue detected (numpy=${numpy_version:-unknown})"
+  echo "[run-comfyui] attempting repair: pin numpy<2, urllib3<=2.5.0, reinstall scipy wheel"
+
+  if ! "$python_bin" -m pip install --upgrade --force-reinstall \
+    "numpy>=1.26,<2" \
+    "urllib3>=2,<=2.5.0" \
+    "scipy>=1.11,<1.14"; then
+    echo "[run-comfyui] warning: numpy/scipy compatibility repair failed" >&2
+    return 0
+  fi
+
+  set +e
+  "$python_bin" - <<'PY'
+import numpy as np
+import scipy.ndimage  # noqa: F401
+print(f"[run-comfyui] numpy/scipy check passed with numpy={np.__version__}")
+PY
+  check_status=$?
+  set -e
+
+  if [[ "$check_status" -ne 0 ]]; then
+    echo "[run-comfyui] warning: numpy/scipy is still failing after repair" >&2
   fi
 }
 
@@ -418,7 +505,7 @@ PY
   fi
 
   echo "[run-comfyui] torch uses CUDA $torch_cuda; attempting upgrade to cu130 wheels"
-  if ! "$python_bin" -m pip install --upgrade --force-reinstall torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130; then
+  if ! "$python_bin" -m pip install --upgrade --force-reinstall torch torchvision torchaudio "numpy>=1.26,<2" --extra-index-url https://download.pytorch.org/whl/cu130; then
     mkdir -p "$(dirname "$state_file")"
     printf "%s\n" "$torch_version" > "$state_file"
     echo "[run-comfyui] warning: torch cu130 auto-upgrade failed; optimized CUDA warning may remain" >&2
@@ -464,6 +551,7 @@ auto_fix_requests_stack="${COMFY_AUTO_FIX_REQUESTS_STACK:-true}"
 auto_install_matrix_nio="${COMFY_AUTO_INSTALL_MATRIX_NIO:-true}"
 auto_fix_torch_cuda130="${COMFY_AUTO_FIX_TORCH_CUDA130:-true}"
 auto_fix_torch_cuda130_force="${COMFY_AUTO_FIX_TORCH_CUDA130_FORCE:-false}"
+auto_fix_numpy_scipy_compat="${COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT:-true}"
 cli_extra_args=("$@")
 
 case "$action" in
@@ -502,6 +590,7 @@ validate_bool_setting "COMFY_AUTO_FIX_REQUESTS_STACK" "$auto_fix_requests_stack"
 validate_bool_setting "COMFY_AUTO_INSTALL_MATRIX_NIO" "$auto_install_matrix_nio"
 validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130" "$auto_fix_torch_cuda130"
 validate_bool_setting "COMFY_AUTO_FIX_TORCH_CUDA130_FORCE" "$auto_fix_torch_cuda130_force"
+validate_bool_setting "COMFY_AUTO_FIX_NUMPY_SCIPY_COMPAT" "$auto_fix_numpy_scipy_compat"
 
 if [[ "$use_venv" == "true" && -x "$venv_dir/bin/python" ]]; then
   python_bin="$venv_dir/bin/python"
@@ -538,6 +627,7 @@ fi
 
 repair_requests_stack_if_needed "$auto_fix_requests_stack"
 upgrade_torch_cuda130_if_needed "$auto_fix_torch_cuda130" "$auto_fix_torch_cuda130_force"
+repair_numpy_scipy_compat_if_needed "$auto_fix_numpy_scipy_compat"
 repair_torchaudio_if_needed "$auto_fix_torchaudio"
 
 ./scripts/prepare-data-dirs.sh
