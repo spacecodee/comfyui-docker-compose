@@ -95,6 +95,8 @@ else
   models_root="$comfy_dir/models"
 fi
 
+default_models_root="$comfy_dir/models"
+
 if [[ -n "$explicit_token" ]]; then
   echo "[ltx-2.3] using explicit Hugging Face token"
 elif [[ -n "${HF_TOKEN:-}" ]]; then
@@ -116,8 +118,17 @@ download_hf_model() {
   requested_models["$model_key"]=1
 
   local destination="$models_root/$model_key"
-  if [[ -f "$destination" && "$force" != "true" ]]; then
+  local default_destination="$default_models_root/$model_key"
+
+  if [[ -s "$destination" && "$force" != "true" ]]; then
     echo "[ltx-2.3] already exists, skipping: $destination"
+    return 0
+  fi
+
+  # If a custom COMFY_MODELS_DIR is set, avoid re-downloading when file already
+  # exists in the default ComfyUI models tree.
+  if [[ "$models_root" != "$default_models_root" && -s "$default_destination" && "$force" != "true" ]]; then
+    echo "[ltx-2.3] already exists in default models tree, skipping: $default_destination"
     return 0
   fi
 
@@ -156,6 +167,11 @@ download_hf_model \
   loras \
   gemma-3-12b-it-abliterated_lora_rank64_bf16.safetensors \
   https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/loras/gemma-3-12b-it-abliterated_lora_rank64_bf16.safetensors
+
+download_hf_model \
+  text_encoders \
+  gemma_3_12B_it_fp4_mixed.safetensors \
+  https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors
 
 download_hf_model \
   latent_upscale_models \
