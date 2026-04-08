@@ -20,6 +20,11 @@ Everything else (models, custom nodes, etc.) lives directly in ./comfyui.
 - scripts/prepare-data-dirs.sh: ensures data/workflows, data/workflows/editing, data/input, and data/output.
 - scripts/setup-preview-method.sh: downloads TAESD decoders for --preview-method (automatic or manual).
 - scripts/model-download.sh: downloads models from Hugging Face or CivitAI into ComfyUI model folders.
+- scripts/downloads/download-z-image-turbo.sh: downloads required models for Z-Image-Turbo.
+- scripts/downloads/download-z-image-base.sh: downloads required models for Z-Image-Base.
+- scripts/downloads/download-ltx-2.3.sh: downloads required models for LTX-2.3.
+- scripts/downloads/download-wan-2.2.sh: downloads required models for WAN 2.2 (i2v, t2v, or all).
+- scripts/download-z-image-turbo.sh and scripts/download-z-image-base.sh remain as compatibility wrappers.
 - scripts/workflow-save.sh: copies workflows into the versioned directory.
 - scripts/workflow-move-to-edit.sh: moves workflows into editing (git-ignored).
 - .env.example: minimal local-mode configuration.
@@ -189,6 +194,27 @@ Destination root:
 
 The allowed model subdirectories are listed in scripts/comfy-model-dirs.txt.
 
+## Model Bundle Scripts
+
+Predefined bundle scripts are available in scripts/downloads:
+
+- Z-Image-Turbo: ./scripts/downloads/download-z-image-turbo.sh
+- Z-Image-Base: ./scripts/downloads/download-z-image-base.sh
+- LTX-2.3: ./scripts/downloads/download-ltx-2.3.sh
+- WAN 2.2: ./scripts/downloads/download-wan-2.2.sh --mode all
+
+WAN 2.2 modes:
+
+- --mode i2v: download only image-to-video files
+- --mode t2v: download only text-to-video files
+- --mode all: download both sets (default)
+
+All bundle scripts:
+
+- use HF_TOKEN automatically when present (or --token override)
+- skip files that already exist unless --force is used
+- de-duplicate repeated file definitions in the same run
+
 ## Environment Variables
 
 Configure .env as needed:
@@ -291,6 +317,18 @@ comfyui/models/vae_approx
 ./scripts/model-download.sh --provider huggingface --model-dir checkpoints --repo owner/repo --file model.safetensors
 ./scripts/model-download.sh --provider civitai --model-dir loras --model-id 12345
 ./scripts/run-comfyui.sh model-download --provider civitai --model-dir checkpoints --model-id 12345
+
+# Download Z-Image model sets
+./scripts/downloads/download-z-image-turbo.sh
+./scripts/downloads/download-z-image-base.sh
+
+# Download LTX-2.3 model set
+./scripts/downloads/download-ltx-2.3.sh
+
+# Download WAN 2.2 model sets
+./scripts/downloads/download-wan-2.2.sh --mode i2v
+./scripts/downloads/download-wan-2.2.sh --mode t2v
+./scripts/downloads/download-wan-2.2.sh --mode all
 
 # Save a workflow to the main workflows directory
 ./scripts/workflow-save.sh my_workflow.json
